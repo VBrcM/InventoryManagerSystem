@@ -45,7 +45,7 @@ public class AdminAccess {
         AccessPage.root.getChildren().setAll(layout);
 
         // --- Navigation Handlers ---
-        dashboardBtn.setOnAction(e -> layout.setCenter(buildDashboard()));
+        dashboardBtn.setOnAction(e -> layout.setCenter(Pages.Layouts.AdminDashboardLayout.build()));
         inventoryBtn.setOnAction(e -> layout.setCenter(buildInventory()));
         reportsBtn.setOnAction(e -> layout.setCenter(buildReports()));
         logoutBtn.setOnAction(e -> AccessLayout.show());
