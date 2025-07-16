@@ -5,46 +5,60 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 
 public class AdminAccess {
 
+    // ===== Left Navigation Bar =====
     public static void show() {
-        // --- Left Navigation Bar ---
         VBox navBar = new VBox(20);
-        navBar.setPadding(new Insets(40));
-        navBar.setStyle("-fx-background-color: #2a2a2a;");
-        navBar.setPrefWidth(250);
-        navBar.setAlignment(Pos.TOP_LEFT);
+        navBar.getStyleClass().add("navbar");
+        navBar.setAlignment(Pos.TOP_CENTER);
+        navBar.setPadding(new Insets(10, 20, 10, 20));
+        navBar.setMaxHeight(Double.MAX_VALUE);
+        VBox.setVgrow(navBar, Priority.ALWAYS);
 
-        // Navigation buttons
-        Button dashboardBtn = new Button("Dashboard");
-        Button inventoryBtn = new Button("Inventory");
-        Button reportsBtn = new Button("Reports");
-        Button logoutBtn = new Button("Logout");
-        Button exitBtn = new Button("Exit");
+        // ===== Title as two stacked labels =====
+        Label title1 = new Label("Inventory");
+        Label title2 = new Label("Manager");
+        title1.getStyleClass().add("navbar-title-line");
+        title2.getStyleClass().add("navbar-title-line");
+        VBox titleBox = new VBox(title1, title2);
+        titleBox.setAlignment(Pos.CENTER);
+        titleBox.setSpacing(0);
 
-        // Apply shared button style
-        dashboardBtn.getStyleClass().add("nav-button");
-        inventoryBtn.getStyleClass().add("nav-button");
-        reportsBtn.getStyleClass().add("nav-button");
-        logoutBtn.getStyleClass().add("nav-button");
-        exitBtn.getStyleClass().add("nav-button");
+        Button dashboardBtn = makeNavButton("Dashboard", "📊");
+        Button inventoryBtn = makeNavButton("Inventory", "📦");
+        Button reportsBtn = makeNavButton("Reports", "📈");
+        Button logoutBtn = makeNavButton("Logout", "🔒");
+        Button exitBtn = makeNavButton("Exit", "🚪");
 
-        // Add buttons to nav bar
-        navBar.getChildren().addAll(dashboardBtn, inventoryBtn, reportsBtn, logoutBtn, exitBtn);
+        VBox topButtonBox = new VBox(15, wrap(dashboardBtn), wrap(inventoryBtn), wrap(reportsBtn));
+        topButtonBox.setAlignment(Pos.TOP_CENTER);
 
-        // --- Root Layout Setup ---
-        final BorderPane layout = new BorderPane();
-        layout.setLeft(navBar);  // Add nav bar to the left side
-        layout.setCenter(Pages.Layouts.AdminDashboardLayout.build()); // Default view
-        layout.setStyle("-fx-background-color: #1e1e1e;");
+        VBox bottomButtonBox = new VBox(15, wrap(logoutBtn), wrap(exitBtn));
+        bottomButtonBox.setAlignment(Pos.BOTTOM_CENTER);
 
-        // Display layout in root StackPane
+        Region spacer = new Region();
+        VBox.setVgrow(spacer, Priority.ALWAYS);
+
+        navBar.getChildren().addAll(titleBox, topButtonBox, spacer, bottomButtonBox);
+
+        BorderPane layout = new BorderPane();
+        layout.setLeft(navBar);
+        layout.setCenter(Pages.Layouts.AdminDashboardLayout.build());
+        layout.setPrefSize(Double.MAX_VALUE, Double.MAX_VALUE);
+        BorderPane.setAlignment(navBar, Pos.TOP_LEFT);
+
+        layout.widthProperty().addListener((obs, oldVal, newVal) -> {
+            navBar.setPrefWidth(newVal.doubleValue() * 0.16);
+        });
+
+        StackPane.setAlignment(layout, Pos.CENTER);
+        StackPane.setMargin(layout, Insets.EMPTY);
         AccessPage.root.getChildren().setAll(layout);
 
-        // --- Navigation Handlers ---
+        // ===== Navigation Handlers =====
         dashboardBtn.setOnAction(e -> layout.setCenter(Pages.Layouts.AdminDashboardLayout.build()));
         inventoryBtn.setOnAction(e -> layout.setCenter(buildInventory()));
         reportsBtn.setOnAction(e -> layout.setCenter(buildReports()));
@@ -52,51 +66,43 @@ public class AdminAccess {
         exitBtn.setOnAction(e -> Platform.exit());
     }
 
-    // --- Dashboard Layout Content ---
-    private static VBox buildDashboard() {
-        Label title = new Label("Admin Dashboard");
-        title.setId("title-label");
-
-        Label totalItemsLabel = new Label("Total Items: ");
-        Label totalEmployeesLabel = new Label("Total Employees: ");
-        Label lowStockLabel = new Label("Low Stock Alerts: ");
-        Label recentActivityLabel = new Label("Recent Activity: ");
-
-        // Set IDs for styling or dynamic updates
-        totalItemsLabel.setId("total-items");
-        totalEmployeesLabel.setId("total-employees");
-        lowStockLabel.setId("low-stock");
-        recentActivityLabel.setId("recent-activity");
-
-        VBox box = new VBox(20, title, totalItemsLabel, totalEmployeesLabel, lowStockLabel, recentActivityLabel);
-        box.setAlignment(Pos.CENTER_LEFT);
-        box.setPadding(new Insets(40));
-        box.getStyleClass().add("dashboard");
-
-        return box;
+    // ===== Button Factory =====
+    private static Button makeNavButton(String text, String icon) {
+        Button btn = new Button(icon + "  " + text);
+        btn.getStyleClass().add("nav-button");
+        btn.setPrefHeight(50);
+        btn.setPrefWidth(280);
+        return btn;
     }
 
-    // --- Inventory Placeholder ---
+    // ===== Button Wrapper =====
+    private static HBox wrap(Button button) {
+        HBox wrapper = new HBox(button);
+        wrapper.setAlignment(Pos.CENTER);
+        return wrapper;
+    }
+
+    // ===== Placeholder Inventory Page =====
     private static VBox buildInventory() {
         Label title = new Label("Inventory Management (Placeholder)");
         title.setId("title-label");
 
         VBox box = new VBox(title);
         box.setAlignment(Pos.CENTER);
-        box.setPadding(new Insets(40));
-        box.setStyle("-fx-background-color: #1e1e1e;");
+        box.getStyleClass().add("dashboard");
+        VBox.setVgrow(box, Priority.ALWAYS);
         return box;
     }
 
-    // --- Reports Placeholder ---
+    // ===== Placeholder Reports Page =====
     private static VBox buildReports() {
         Label title = new Label("Reports Section (Placeholder)");
         title.setId("title-label");
 
         VBox box = new VBox(title);
         box.setAlignment(Pos.CENTER);
-        box.setPadding(new Insets(40));
-        box.setStyle("-fx-background-color: #1e1e1e;");
+        box.getStyleClass().add("dashboard");
+        VBox.setVgrow(box, Priority.ALWAYS);
         return box;
     }
 }

@@ -12,9 +12,10 @@ public class AdminDashboardLayout {
 
     public static VBox build() {
 
-        // ===== Title =====
-        Label title = new Label("Admin Dashboard");
+        // ===== Dashboard Title =====
+        Label title = new Label("Dashboard");
         title.setId("title-label");
+        title.setPadding(new Insets(10, 0, 10, 0));
 
         // ===== Stat Boxes =====
         VBox totalItems = createStatBox("Total Items", "120");
@@ -57,7 +58,6 @@ public class AdminDashboardLayout {
         grid.setHgap(20);
         grid.setVgap(20);
         grid.setPadding(new Insets(20));
-
         grid.add(chart1, 0, 0);
         grid.add(chart2, 1, 0);
         grid.add(chart3, 0, 1);
