@@ -1,0 +1,90 @@
+.root {
+    -fx-padding: 20;
+    -fx-spacing: 10;
+    -fx-alignment: center;
+    -fx-background-color: #1e1e1e;
+    -fx-text-fill: #ffffff;
+}
+
+.label {
+    -fx-font-size: 18px;
+
+    -fx-text-fill: #ffffff;
+}
+
+.input-field {
+    -fx-font-size: 20px;
+    -fx-pref-width: 500px;
+    -fx-min-width: 400px;
+    -fx-max-width: 700px;
+    -fx-pref-height: 60px;
+    -fx-min-height: 60px;
+    -fx-max-height: 90px;
+
+    -fx-background-color: #2d2d2d;
+    -fx-text-fill: #ffffff;
+    -fx-prompt-text-fill: #aaaaaa;
+    -fx-border-color: #444;
+}
+
+.submit-button {
+    -fx-font-size: 20px;
+    -fx-pref-width: 500px;
+    -fx-min-width: 400px;
+    -fx-max-width: 700px;
+    -fx-pref-height: 60px;
+    -fx-min-height: 60px;
+    -fx-max-height: 90px;
+
+    -fx-background-color: #3a3a3a;
+    -fx-text-fill: white;
+    -fx-border-color: #555;
+}
+
+.submit-button:hover {
+    -fx-background-color: #555;
+    -fx-text-fill: #ffffff;
+    -fx-cursor: hand;
+}
+
+.exit-button {
+    -fx-font-size: 20px;
+    -fx-pref-width: 500px;
+    -fx-min-width: 400px;
+    -fx-max-width: 700px;
+    -fx-pref-height: 60px;
+    -fx-min-height: 60px;
+    -fx-max-height: 90px;
+
+    -fx-background-color: #3a3a3a;
+    -fx-text-fill: white;
+    -fx-border-color: #555;
+}
+
+.exit-button:hover {
+    -fx-background-color: #555;
+    -fx-text-fill: #ffffff;
+    -fx-cursor: hand;
+}
+
+/*admin*/
+
+#title-label {
+    -fx-text-fill: white;
+    -fx-font-size: 32px;
+    -fx-font-weight: bold;
+}
+
+.nav-button {
+    -fx-background-color: #3a3a3a;
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+    -fx-pref-width: 200px;
+    -fx-pref-height: 40px;
+    -fx-border-color: #555;
+    -fx-cursor: hand;
+}
+
+.nav-button:hover {
+    -fx-background-color: #555;
+}
