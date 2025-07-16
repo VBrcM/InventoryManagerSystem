@@ -99,3 +99,32 @@
     -fx-pref-width: 250;
     -fx-alignment: center;
 }
+
+/* charts */
+.chart {
+    -fx-background-color: #2e2e2e;
+    -fx-background-radius: 10;
+}
+
+.chart-plot-background {
+    -fx-background-color: transparent;
+}
+
+.chart-title {
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+}
+
+.axis-label {
+    -fx-text-fill: #cccccc;
+}
+
+.chart-legend {
+    -fx-text-fill: white;
+}
+
+.axis {
+    -fx-tick-label-fill: #aaaaaa;
+    -fx-tick-mark-visible: false;
+    -fx-border-color: transparent;
+}

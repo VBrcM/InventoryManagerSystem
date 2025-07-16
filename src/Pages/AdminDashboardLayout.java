@@ -40,7 +40,9 @@ public class AdminDashboardLayout {
 
         PieChart chart4 = new PieChart();
         chart4.setTitle("Today's Sales");
-        chart4.getData().add(new PieChart.Data("Sample", 1));
+        chart4.getData().add(new PieChart.Data("Stationery", 45));
+        chart4.getData().add(new PieChart.Data("Electronics", 25));
+        chart4.getData().add(new PieChart.Data("Snacks", 30));
         chart4.setStyle("-fx-background-color: #2e2e2e; -fx-background-radius: 10;");
 
         Platform.runLater(() -> {
@@ -81,6 +83,10 @@ public class AdminDashboardLayout {
 
         NumberAxis yAxis = new NumberAxis();
         yAxis.setLabel("Value");
+        yAxis.setAutoRanging(false);
+        yAxis.setLowerBound(0);
+        yAxis.setUpperBound(400);
+        yAxis.setTickUnit(100);
 
         BarChart<String, Number> chart = new BarChart<>(xAxis, yAxis);
         chart.setTitle(title);
@@ -90,7 +96,31 @@ public class AdminDashboardLayout {
         chart.setStyle("-fx-background-color: #2e2e2e; -fx-background-radius: 10;");
 
         XYChart.Series<String, Number> series = new XYChart.Series<>();
-        series.getData().add(new XYChart.Data<>("Placeholder", 10));
+
+        switch (title) {
+            case "Sales This Month":
+                series.getData().add(new XYChart.Data<>("Week 1", 120));
+                series.getData().add(new XYChart.Data<>("Week 2", 95));
+                series.getData().add(new XYChart.Data<>("Week 3", 140));
+                series.getData().add(new XYChart.Data<>("Week 4", 110));
+                break;
+            case "Sales Last Month":
+                series.getData().add(new XYChart.Data<>("Week 1", 100));
+                series.getData().add(new XYChart.Data<>("Week 2", 130));
+                series.getData().add(new XYChart.Data<>("Week 3", 90));
+                series.getData().add(new XYChart.Data<>("Week 4", 115));
+                break;
+            case "Most Popular Items":
+                series.getData().add(new XYChart.Data<>("Pens", 300));
+                series.getData().add(new XYChart.Data<>("Notebooks", 250));
+                series.getData().add(new XYChart.Data<>("Folders", 180));
+                series.getData().add(new XYChart.Data<>("Markers", 120));
+                break;
+            default:
+                series.getData().add(new XYChart.Data<>("Placeholder", 10));
+                break;
+        }
+
         chart.getData().add(series);
 
         Platform.runLater(() -> {
