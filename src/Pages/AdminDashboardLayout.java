@@ -7,6 +7,8 @@ import javafx.scene.Node;
 import javafx.scene.chart.*;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
+import DB.*;
+import java.sql.*;
 
 public class AdminDashboardLayout {
 
@@ -94,35 +96,69 @@ public class AdminDashboardLayout {
         chart.setAnimated(false);
         chart.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
         chart.setStyle("-fx-background-color: #2e2e2e; -fx-background-radius: 10;");
-
+//-----------------------
+        String query;
         XYChart.Series<String, Number> series = new XYChart.Series<>();
 
-        switch (title) {
-            case "Sales This Month":
-                series.getData().add(new XYChart.Data<>("Week 1", 120));
-                series.getData().add(new XYChart.Data<>("Week 2", 95));
-                series.getData().add(new XYChart.Data<>("Week 3", 140));
-                series.getData().add(new XYChart.Data<>("Week 4", 110));
-                break;
-            case "Sales Last Month":
-                series.getData().add(new XYChart.Data<>("Week 1", 100));
-                series.getData().add(new XYChart.Data<>("Week 2", 130));
-                series.getData().add(new XYChart.Data<>("Week 3", 90));
-                series.getData().add(new XYChart.Data<>("Week 4", 115));
-                break;
-            case "Most Popular Items":
-                series.getData().add(new XYChart.Data<>("Pens", 300));
-                series.getData().add(new XYChart.Data<>("Notebooks", 250));
-                series.getData().add(new XYChart.Data<>("Folders", 180));
-                series.getData().add(new XYChart.Data<>("Markers", 120));
-                break;
-            default:
-                series.getData().add(new XYChart.Data<>("Placeholder", 10));
-                break;
-        }
+        try {
+            Connection conn = JDBC.connect();
+            if (conn == null) {
+                System.out.println("DB connection is null.");
+                return chart;
+            }
 
+            PreparedStatement stmt;
+            ResultSet rs;
+
+            switch (title) {
+                case "Sales This Month":
+                    query = "SELECT WEEK(s.sale_date, 1) AS week_num, SUM(si.sold_qty) AS total_sales FROM Sales s JOIN Sales_items si ON s.sale_id = si.sale_id WHERE MONTH(s.sale_date) = MONTH(CURDATE()) AND YEAR(s.sale_date) = YEAR(CURDATE()) GROUP BY week_num ORDER BY week_num".formatted();
+                    break;
+
+                case "Sales Last Month":
+                    query = "SELECT WEEK(s.sale_date, 1) AS week_num, SUM(si.sold_qty) AS total_sales FROM Sales s JOIN Sales_items si ON s.sale_id = si.sale_id WHERE MONTH(s.sale_date) = MONTH(CURDATE() - INTERVAL 1 MONTH) AND YEAR(s.sale_date) = YEAR(CURDATE() - INTERVAL 1 MONTH) GROUP BY week_num ORDER BY week_num".formatted();
+                    break;
+
+                case "Most Popular Items":
+                    query = "SELECT p.product AS label, SUM(si.sold_qty) AS value FROM Products p JOIN Sales_items si ON p.product_id = si.product_id GROUP BY p.product ORDER BY value DESC LIMIT 5".formatted();
+                    break;
+
+                case "Today's Sales":
+                    query = "SELECT c.category AS label, SUM(si.sold_qty) AS value FROM Sales s JOIN Sales_items si ON s.sale_id = si.sale_id JOIN Products p ON si.product_id = p.product_id JOIN Category c ON p.category_id = c.category_id WHERE DATE(s.sale_date) = CURDATE() GROUP BY c.category".formatted();
+                    break;
+                default:
+                    series.getData().add(new XYChart.Data<>("Placeholder", 10));
+                    chart.getData().add(series);
+                    return chart;
+            }
+
+            stmt = conn.prepareStatement(query);
+            rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                String label;
+                int value;
+
+                if (title.contains("Sales")) {
+                    label = "Week " + rs.getInt("week_num");
+                    value = rs.getInt("total_sales");
+                } else {
+                    label = rs.getString("label");
+                    value = rs.getInt("value");
+                }
+
+                series.getData().add(new XYChart.Data<>(label, value));
+            }
+
+            rs.close();
+            stmt.close();
+            conn.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         chart.getData().add(series);
 
+//-------------------------------
         Platform.runLater(() -> {
             Node bg = chart.lookup(".chart-plot-background");
             if (bg != null) {
