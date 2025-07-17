@@ -1,17 +1,24 @@
+/* Root container */
 .root {
-    -fx-padding: 20;
+    -fx-background-color: #1e1e1e;
+    -fx-padding: 0;
     -fx-spacing: 10;
     -fx-alignment: center;
-    -fx-background-color: #1e1e1e;
     -fx-text-fill: #ffffff;
 }
 
+/* Labels */
 .label {
     -fx-font-size: 18px;
-
     -fx-text-fill: #ffffff;
 }
+#title-label {
+    -fx-text-fill: white;
+    -fx-font-size: 32px;
+    -fx-font-weight: bold;
+}
 
+/* Input fields */
 .input-field {
     -fx-font-size: 20px;
     -fx-pref-width: 500px;
@@ -20,13 +27,13 @@
     -fx-pref-height: 60px;
     -fx-min-height: 60px;
     -fx-max-height: 90px;
-
     -fx-background-color: #2d2d2d;
     -fx-text-fill: #ffffff;
     -fx-prompt-text-fill: #aaaaaa;
     -fx-border-color: #444;
 }
 
+/* Submit button */
 .submit-button {
     -fx-font-size: 20px;
     -fx-pref-width: 500px;
@@ -35,18 +42,17 @@
     -fx-pref-height: 60px;
     -fx-min-height: 60px;
     -fx-max-height: 90px;
-
     -fx-background-color: #3a3a3a;
     -fx-text-fill: white;
     -fx-border-color: #555;
+    -fx-cursor: hand;
 }
-
 .submit-button:hover {
     -fx-background-color: #555;
     -fx-text-fill: #ffffff;
-    -fx-cursor: hand;
 }
 
+/* Exit button */
 .exit-button {
     -fx-font-size: 20px;
     -fx-pref-width: 500px;
@@ -55,40 +61,75 @@
     -fx-pref-height: 60px;
     -fx-min-height: 60px;
     -fx-max-height: 90px;
-
     -fx-background-color: #3a3a3a;
     -fx-text-fill: white;
     -fx-border-color: #555;
+    -fx-cursor: hand;
 }
-
 .exit-button:hover {
     -fx-background-color: #555;
     -fx-text-fill: #ffffff;
-    -fx-cursor: hand;
 }
 
-/*admin*/
-
-#title-label {
-    -fx-text-fill: white;
-    -fx-font-size: 32px;
+/* Admin Dashboard Title */
+#navbar-title {
+    -fx-font-size: 24px;
     -fx-font-weight: bold;
+    -fx-text-fill: white;
+    -fx-padding: 0 0 20 0;
+    -fx-text-alignment: center;
+}
+.navbar-title-line {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+    -fx-text-alignment: center;
+    -fx-alignment: center;
+    -fx-padding: 0;
 }
 
+/* Navbar container */
+.navbar {
+    -fx-background-color: #232323;
+    -fx-padding: 20 40 20 40;
+    -fx-spacing: 15;
+    -fx-alignment: top-center;
+    -fx-pref-width: 280px;
+}
 .nav-button {
-    -fx-background-color: #3a3a3a;
+    -fx-background-color: #1e1e1e;
     -fx-text-fill: white;
     -fx-font-size: 16px;
-    -fx-pref-width: 200px;
-    -fx-pref-height: 40px;
-    -fx-border-color: #555;
+    -fx-pref-width: 280px;
+    -fx-pref-height: 50px;
+    -fx-border-color: transparent;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
     -fx-cursor: hand;
+    -fx-alignment: center-left;
+    -fx-padding: 0 0 0 20;
+    -fx-content-display: left;
+    -fx-graphic-text-gap: 10px;
 }
-
 .nav-button:hover {
-    -fx-background-color: #555;
+    -fx-background-color: #444;
+    -fx-text-fill: white;
 }
 
+/* Spacer to push bottom buttons down */
+.navbar-spacer {
+    -fx-min-height: 10px;
+    -fx-pref-height: 100%;
+    -fx-max-height: Double MAX_VALUE;
+}
+
+/* Bottom button container */
+.navbar-bottom {
+    -fx-alignment: bottom-center;
+    -fx-spacing: 15;
+}
+
+/* Stat boxes */
 .stat-box {
     -fx-background-color: #333;
     -fx-padding: 20;
@@ -98,33 +139,146 @@
     -fx-border-width: 1;
     -fx-pref-width: 250;
     -fx-alignment: center;
+    -fx-background-radius: 10px;
 }
 
-/* charts */
+/* Charts */
 .chart {
     -fx-background-color: #2e2e2e;
-    -fx-background-radius: 10;
+    -fx-background-radius: 10px;
 }
-
 .chart-plot-background {
     -fx-background-color: transparent;
 }
-
 .chart-title {
     -fx-text-fill: white;
     -fx-font-size: 16px;
 }
-
 .axis-label {
     -fx-text-fill: #cccccc;
 }
-
 .chart-legend {
     -fx-text-fill: white;
 }
-
 .axis {
     -fx-tick-label-fill: #aaaaaa;
     -fx-tick-mark-visible: false;
     -fx-border-color: transparent;
+}
+
+/* Inventory Table */
+.table-view {
+    -fx-background-color: #2e2e2e;
+    -fx-table-cell-border-color: #444;
+    -fx-padding: 10;
+    -fx-text-fill: white;
+}
+.table-view .column-header-background {
+    -fx-background-color: #3a3a3a;
+}
+.table-view .column-header,
+.table-view .filler {
+    -fx-size: 35px;
+    -fx-border-color: transparent;
+    -fx-background-color: #3a3a3a;
+}
+.table-view .label {
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+}
+.table-row-cell {
+    -fx-background-color: #2e2e2e;
+    -fx-border-color: #444;
+}
+.table-row-cell:filled:selected,
+.table-row-cell:filled:selected:hover {
+    -fx-background-color: #555;
+}
+.table-row-cell:hover {
+    -fx-background-color: #383838;
+}
+
+/* Inventory Button */
+.inventory-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+    -fx-pref-width: 280px;
+    -fx-pref-height: 55px;
+    -fx-border-color: #555;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-alignment: center;
+    -fx-cursor: hand;
+}
+.inventory-button:hover {
+    -fx-background-color: #555;
+}
+
+/* Dialog Styles */
+.custom-dialog {
+    -fx-background-color: #2e2e2e;
+    -fx-border-color: #444;
+    -fx-border-width: 1;
+    -fx-background-radius: 8;
+}
+.dialog-pane {
+    -fx-background-color: #2e2e2e;
+    -fx-background-radius: 10;
+}
+.dialog-pane .text-field,
+.dialog-pane .text-area {
+    -fx-background-color: #3a3a3a;
+    -fx-text-fill: white;
+    -fx-prompt-text-fill: #aaaaaa;
+    -fx-border-color: #555;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+}
+.dialog-pane .button {
+    -fx-background-color: #3a3a3a;
+    -fx-text-fill: white;
+    -fx-border-color: #555;
+    -fx-background-radius: 6;
+}
+.dialog-pane .button:hover {
+    -fx-background-color: #555;
+}
+.dialog-container {
+    -fx-background-color: #2e2e2e;
+    -fx-padding: 30;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-spacing: 10;
+}
+
+/* Dialog row uniform height */
+.dialog-row {
+    -fx-pref-height: 90px;
+    -fx-alignment: center-left;
+    -fx-spacing: 10;
+}
+
+/* Text area for description — 3x height */
+.dialog-pane .text-area {
+    -fx-pref-height: 180px;
+    -fx-min-height: 180px;
+    -fx-max-height: 180px;
+}
+
+/* Optional field sizes */
+.input-field-long {
+    -fx-pref-width: 400;
+}
+.input-field-medium {
+    -fx-pref-width: 300;
+}
+.input-field,
+.input-field-short,
+.input-area {
+    -fx-background-color: #3c3c3c;
+    -fx-text-fill: white;
+    -fx-background-radius: 6;
+    -fx-border-color: transparent;
+    -fx-prompt-text-fill: #888;
 }
