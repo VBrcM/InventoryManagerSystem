@@ -6,11 +6,12 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
+import javafx.stage.Stage;
 
 public class AdminAccess {
 
-    // ===== Left Navigation Bar =====
-    public static void show() {
+    public static void show(Stage stage) {
+        // ===== Navigation Bar (Left Side) =====
         VBox navBar = new VBox(20);
         navBar.getStyleClass().add("navbar");
         navBar.setAlignment(Pos.TOP_CENTER);
@@ -18,7 +19,7 @@ public class AdminAccess {
         navBar.setMaxHeight(Double.MAX_VALUE);
         VBox.setVgrow(navBar, Priority.ALWAYS);
 
-        // ===== Title as two stacked labels =====
+        // ===== Title (Inventory Manager) =====
         Label title1 = new Label("Inventory");
         Label title2 = new Label("Manager");
         title1.getStyleClass().add("navbar-title-line");
@@ -27,46 +28,53 @@ public class AdminAccess {
         titleBox.setAlignment(Pos.CENTER);
         titleBox.setSpacing(0);
 
+        // ===== Navigation Buttons =====
         Button dashboardBtn = makeNavButton("Dashboard", "📊");
         Button inventoryBtn = makeNavButton("Inventory", "📦");
-        Button reportsBtn = makeNavButton("Reports", "📈");
+        Button reportsBtn = makeNavButton("Sales Reports", "📈");
         Button logoutBtn = makeNavButton("Logout", "🔒");
         Button exitBtn = makeNavButton("Exit", "🚪");
 
+        // ===== Grouping Top and Bottom Buttons =====
         VBox topButtonBox = new VBox(15, wrap(dashboardBtn), wrap(inventoryBtn), wrap(reportsBtn));
         topButtonBox.setAlignment(Pos.TOP_CENTER);
 
         VBox bottomButtonBox = new VBox(15, wrap(logoutBtn), wrap(exitBtn));
         bottomButtonBox.setAlignment(Pos.BOTTOM_CENTER);
 
+        // ===== Spacer Between Top and Bottom Buttons =====
         Region spacer = new Region();
         VBox.setVgrow(spacer, Priority.ALWAYS);
 
+        // ===== Add All Components to Navigation Bar =====
         navBar.getChildren().addAll(titleBox, topButtonBox, spacer, bottomButtonBox);
 
+        // ===== Main Layout =====
         BorderPane layout = new BorderPane();
         layout.setLeft(navBar);
-        layout.setCenter(Pages.Layouts.AdminDashboardLayout.build());
+        layout.setCenter(Pages.Layouts.AdminDashboardLayout.build()); // Default view
         layout.setPrefSize(Double.MAX_VALUE, Double.MAX_VALUE);
         BorderPane.setAlignment(navBar, Pos.TOP_LEFT);
 
+        // ===== Responsive Navbar Width (16% of screen width) =====
         layout.widthProperty().addListener((obs, oldVal, newVal) -> {
             navBar.setPrefWidth(newVal.doubleValue() * 0.16);
         });
 
+        // ===== Set Layout in Root StackPane =====
         StackPane.setAlignment(layout, Pos.CENTER);
         StackPane.setMargin(layout, Insets.EMPTY);
         AccessPage.root.getChildren().setAll(layout);
 
-        // ===== Navigation Handlers =====
+        // ===== Button Actions =====
         dashboardBtn.setOnAction(e -> layout.setCenter(Pages.Layouts.AdminDashboardLayout.build()));
-        inventoryBtn.setOnAction(e -> layout.setCenter(buildInventory()));
+        inventoryBtn.setOnAction(e -> layout.setCenter(Pages.Layouts.AdminInventoryLayout.build()));
         reportsBtn.setOnAction(e -> layout.setCenter(buildReports()));
         logoutBtn.setOnAction(e -> AccessLayout.show());
         exitBtn.setOnAction(e -> Platform.exit());
     }
 
-    // ===== Button Factory =====
+    // ===== Helper to Create a Styled Navigation Button =====
     private static Button makeNavButton(String text, String icon) {
         Button btn = new Button(icon + "  " + text);
         btn.getStyleClass().add("nav-button");
@@ -75,14 +83,14 @@ public class AdminAccess {
         return btn;
     }
 
-    // ===== Button Wrapper =====
+    // ===== Wrap Button in Centered HBox for Alignment =====
     private static HBox wrap(Button button) {
         HBox wrapper = new HBox(button);
         wrapper.setAlignment(Pos.CENTER);
         return wrapper;
     }
 
-    // ===== Placeholder Inventory Page =====
+    // ===== Placeholder Inventory Page (Unused) =====
     private static VBox buildInventory() {
         Label title = new Label("Inventory Management (Placeholder)");
         title.setId("title-label");

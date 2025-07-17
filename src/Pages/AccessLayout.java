@@ -6,64 +6,57 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
 
 public class AccessLayout {
 
+    // ===== UI Initialization and Styling =====
     public static void show() {
-        // --- Create UI Elements ---
-
-        // Access code label
         Label label = new Label("Enter Access Code:");
 
-        // Password input field
         PasswordField accessCodeField = new PasswordField();
         accessCodeField.setPromptText("Access Code");
         accessCodeField.getStyleClass().add("input-field");
 
-        // Error message label
         Label errorLabel = new Label();
         errorLabel.setStyle("-fx-text-fill: red; -fx-font-size: 16px;");
 
-        // Submit button
         Button submitButton = new Button("Submit");
-        submitButton.setDefaultButton(true); // Triggers on Enter key
+        submitButton.setDefaultButton(true);
         submitButton.getStyleClass().add("submit-button");
 
-        // Exit button
         Button exitButton = new Button("Exit");
         exitButton.getStyleClass().add("exit-button");
 
-        // --- Set Button Actions ---
-
-        // Submit logic for checking access code
+        // ===== Submit Button Logic =====
         submitButton.setOnAction(e -> {
             String code = accessCodeField.getText();
+            Stage currentStage = (Stage) AccessPage.root.getScene().getWindow();
+
             if (code.equals("12345")) {
                 errorLabel.setText("");
                 EmployeeAccess.show();
             } else if (code.equals("admin123")) {
                 errorLabel.setText("");
-                AdminAccess.show();
+                AdminAccess.show(currentStage);
             } else {
                 errorLabel.setText("Invalid Access Code");
             }
         });
 
-        // Exit app on exit button press
+        // ===== Exit Button Logic =====
         exitButton.setOnAction(e -> Platform.exit());
 
-        // --- Layout Setup ---
-
+        // ===== Layout Setup =====
         VBox layout = new VBox(10, label, accessCodeField, submitButton, exitButton, errorLabel);
         layout.setAlignment(Pos.CENTER);
         layout.setPadding(new Insets(40));
 
-        // Allow input and buttons to expand vertically
         VBox.setVgrow(accessCodeField, Priority.ALWAYS);
         VBox.setVgrow(submitButton, Priority.ALWAYS);
         VBox.setVgrow(exitButton, Priority.ALWAYS);
 
-        // Set layout as the current view inside the root container
+        // ===== Scene Display =====
         AccessPage.root.getChildren().setAll(layout);
     }
 }
