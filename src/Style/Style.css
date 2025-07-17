@@ -223,17 +223,22 @@
     -fx-background-radius: 8;
 }
 .dialog-pane {
-    -fx-background-color: #2e2e2e;
     -fx-background-radius: 10;
+
+    -fx-background-color: #232323;
+    -fx-text-fill: #ffffff;
+    -fx-prompt-text-fill: #aaaaaa;
+    -fx-border-color: #444;
 }
 .dialog-pane .text-field,
 .dialog-pane .text-area {
-    -fx-background-color: #3a3a3a;
-    -fx-text-fill: white;
-    -fx-prompt-text-fill: #aaaaaa;
-    -fx-border-color: #555;
     -fx-background-radius: 6;
     -fx-border-radius: 6;
+
+    -fx-background-color: #232323;
+    -fx-text-fill: #ffffff;
+    -fx-prompt-text-fill: #aaaaaa;
+    -fx-border-color: #444;
 }
 .dialog-pane .button {
     -fx-background-color: #3a3a3a;
@@ -252,18 +257,20 @@
     -fx-spacing: 10;
 }
 
+.text-area.dialog-pane {
+    -fx-control-inner-background: #232323;
+    -fx-background-color: #232323;
+    -fx-text-fill: white;
+    -fx-highlight-fill: #555;
+    -fx-highlight-text-fill: white;
+    -fx-border-color: #555;
+}
+
 /* Dialog row uniform height */
 .dialog-row {
     -fx-pref-height: 90px;
     -fx-alignment: center-left;
     -fx-spacing: 10;
-}
-
-/* Text area for description — 3x height */
-.dialog-pane .text-area {
-    -fx-pref-height: 180px;
-    -fx-min-height: 180px;
-    -fx-max-height: 180px;
 }
 
 /* Optional field sizes */
