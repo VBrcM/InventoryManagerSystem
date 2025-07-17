@@ -55,7 +55,7 @@ public class InventoryDialog {
 
         TextArea descriptionField = new TextArea();
         descriptionField.setPromptText("Description");
-        descriptionField.setPrefSize(rowWidth, rowHeight * 3); // 3x taller
+        descriptionField.setPrefSize(rowWidth, rowHeight * 3);
         descriptionField.setWrapText(true);
         descriptionField.getStyleClass().add("input-field");
 

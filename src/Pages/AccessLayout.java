@@ -35,7 +35,7 @@ public class AccessLayout {
 
             if (code.equals("12345")) {
                 errorLabel.setText("");
-                EmployeeAccess.show();
+                EmployeeAccess.show(currentStage);
             } else if (code.equals("admin123")) {
                 errorLabel.setText("");
                 AdminAccess.show(currentStage);
