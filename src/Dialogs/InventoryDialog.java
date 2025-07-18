@@ -110,7 +110,7 @@ public class InventoryDialog {
                 Product product = new Product();
                 product.setProductId(productToEdit != null ? productToEdit.getProductId() : 0);
                 product.setProduct(name);
-
+                product.setCategoryId(categoryObj.getCategoryId()); // ✅ category ID is now set
                 product.setPrice(price);
                 product.setStock(quantity);
                 product.setDescription(description);

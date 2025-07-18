@@ -75,7 +75,23 @@ public class AdminInventoryLayout {
 
         // ===== Dialog Trigger =====
         addBtn.setOnAction(e -> InventoryDialog.show(null, products));
+        editBtn.setOnAction(e -> {
+            Product selectedProduct = table.getSelectionModel().getSelectedItem();
+            if (selectedProduct != null) {
+                InventoryDialog.show(selectedProduct, products); // ✅ Pass selected product for editing
+            } else {
+                InventoryDialog.showError("Please select a product to edit.");
+            }
+        });
 
+        deleteBtn.setOnAction(e -> {
+            Product selectedProduct = table.getSelectionModel().getSelectedItem();
+            if (selectedProduct != null) {
+                // handle deletion here, e.g., confirm and delete from DB + ObservableList
+            } else {
+                InventoryDialog.showError("Please select a product to delete.");
+            }
+        });
         return root;
     }
 }
