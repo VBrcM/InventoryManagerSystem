@@ -1,10 +1,16 @@
 package Pages.Layouts;
 
+import DB.*;
 import Dialogs.InventoryDialog;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+
+import java.util.List;
 
 public class AdminInventoryLayout {
 
@@ -19,17 +25,31 @@ public class AdminInventoryLayout {
         searchField.getStyleClass().add("input-field");
 
         // ===== TableView =====
-        TableView<String> table = new TableView<>();
+        TableView<Product> table = new TableView<>();
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         table.getStyleClass().add("table-view");
 
-        TableColumn<String, String> nameCol = new TableColumn<>("Item Name");
-        TableColumn<String, String> categoryCol = new TableColumn<>("Category");
-        TableColumn<String, String> quantityCol = new TableColumn<>("Quantity");
-        TableColumn<String, String> priceCol = new TableColumn<>("Price");
+        TableColumn<Product, String> nameCol = new TableColumn<>("Item Name");
+        nameCol.setCellValueFactory(new PropertyValueFactory<>("product"));
+
+        TableColumn<Product, String> categoryCol = new TableColumn<>("Category");
+        categoryCol.setCellValueFactory(new PropertyValueFactory<>("categoryName"));
+
+        TableColumn<Product, Integer> quantityCol = new TableColumn<>("Quantity");
+        quantityCol.setCellValueFactory(new PropertyValueFactory<>("stock"));
+
+        TableColumn<Product, Double> priceCol = new TableColumn<>("Price");
+        priceCol.setCellValueFactory(new PropertyValueFactory<>("price"));
 
         table.getColumns().addAll(nameCol, categoryCol, quantityCol, priceCol);
         VBox.setVgrow(table, Priority.ALWAYS);
+
+        //POPULATE TABLE
+        ProductDAO dao = new ProductDAO();
+        List<Product> productList = dao.getAllWithCategory();
+        ObservableList<Product> products = FXCollections.observableArrayList(productList);
+        table.setItems(products);
+
 
         // ===== Action Buttons =====
         Button addBtn = new Button("Add");
@@ -54,7 +74,7 @@ public class AdminInventoryLayout {
         StackPane root = new StackPane(content);
 
         // ===== Dialog Trigger =====
-        addBtn.setOnAction(e -> InventoryDialog.show());
+        addBtn.setOnAction(e -> InventoryDialog.show(null, products));
 
         return root;
     }

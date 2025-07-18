@@ -2,6 +2,7 @@ package DB;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class JDBC {
@@ -18,5 +19,6 @@ public class JDBC {
             System.out.println("Connection failed!");
             return null;
         }
+
     }
 }

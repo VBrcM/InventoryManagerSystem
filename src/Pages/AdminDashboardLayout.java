@@ -112,19 +112,44 @@ public class AdminDashboardLayout {
 
             switch (title) {
                 case "Sales This Month":
-                    query = "SELECT WEEK(s.sale_date, 1) AS week_num, SUM(si.sold_qty) AS total_sales FROM Sales s JOIN Sales_items si ON s.sale_id = si.sale_id WHERE MONTH(s.sale_date) = MONTH(CURDATE()) AND YEAR(s.sale_date) = YEAR(CURDATE()) GROUP BY week_num ORDER BY week_num".formatted();
+                    query = "SELECT WEEK(s.sale_date, 1) AS week_num, " +
+                            "SUM(si.si_qty) AS total_sales " +
+                            "FROM sale s " +
+                            "JOIN sale_item si ON s.sale_id = si.sale_id " +
+                            "WHERE MONTH(s.sale_date) = MONTH(CURDATE()) " +
+                            "AND YEAR(s.sale_date) = YEAR(CURDATE()) " +
+                            "GROUP BY week_num " +
+                            "ORDER BY week_num";
                     break;
 
                 case "Sales Last Month":
-                    query = "SELECT WEEK(s.sale_date, 1) AS week_num, SUM(si.sold_qty) AS total_sales FROM Sales s JOIN Sales_items si ON s.sale_id = si.sale_id WHERE MONTH(s.sale_date) = MONTH(CURDATE() - INTERVAL 1 MONTH) AND YEAR(s.sale_date) = YEAR(CURDATE() - INTERVAL 1 MONTH) GROUP BY week_num ORDER BY week_num".formatted();
+                    query = "SELECT WEEK(s.sale_date, 1) AS week_num, " +
+                            "SUM(si.si_qty) AS total_sales " +
+                            "FROM Sale s " +
+                            "JOIN Sale_item si ON s.sale_id = si.sale_id " +
+                            "WHERE MONTH(s.sale_date) = MONTH(CURDATE() - INTERVAL 1 MONTH) " +
+                            "AND YEAR(s.sale_date) = YEAR(CURDATE() - INTERVAL 1 MONTH) " +
+                            "GROUP BY week_num " +
+                            "ORDER BY week_num";
                     break;
 
                 case "Most Popular Items":
-                    query = "SELECT p.product AS label, SUM(si.sold_qty) AS value FROM Products p JOIN Sales_items si ON p.product_id = si.product_id GROUP BY p.product ORDER BY value DESC LIMIT 5".formatted();
+                    query = "SELECT p.product AS label, SUM(si.si_qty) AS value " +
+                            "FROM Product p " +
+                            "JOIN Sale_item si ON p.product_id = si.product_id " +
+                            "GROUP BY p.product " +
+                            "ORDER BY value DESC " +
+                            "LIMIT 5";
                     break;
 
                 case "Today's Sales":
-                    query = "SELECT c.category AS label, SUM(si.sold_qty) AS value FROM Sales s JOIN Sales_items si ON s.sale_id = si.sale_id JOIN Products p ON si.product_id = p.product_id JOIN Category c ON p.category_id = c.category_id WHERE DATE(s.sale_date) = CURDATE() GROUP BY c.category".formatted();
+                    query = "SELECT c.category AS label, SUM(si.si_qty) AS value " +
+                            "FROM Sale s " +
+                            "JOIN Sale_item si ON s.sale_id = si.sale_id " +
+                            "JOIN Product p ON si.product_id = p.product_id " +
+                            "JOIN Category c ON p.category_id = c.category_id " +
+                            "WHERE DATE(s.sale_date) = CURDATE() " +
+                            "GROUP BY c.category";
                     break;
                 default:
                     series.getData().add(new XYChart.Data<>("Placeholder", 10));
