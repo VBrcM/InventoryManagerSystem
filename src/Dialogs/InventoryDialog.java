@@ -11,7 +11,6 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.*;
 import DB.*;
-import java.util.List;
 import java.util.Optional;
 
 public class InventoryDialog {
@@ -148,7 +147,6 @@ public class InventoryDialog {
 
                 root.getChildren().remove(overlay);
             } catch (Exception ex) {
-                ex.printStackTrace();
                 showError("Invalid input. Please check the fields.");
             }
         });
