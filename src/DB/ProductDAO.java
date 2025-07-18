@@ -41,14 +41,21 @@ public class ProductDAO {
         }
     }
 
-    public void delete(int productId) throws SQLException {
-        String sql = "DELETE FROM Product WHERE product_id = ?";
+    public static boolean delete(int productId) {
+        String sql = "DELETE FROM product WHERE product_id = ?";
         try (Connection conn = JDBC.connect();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
+
             stmt.setInt(1, productId);
-            stmt.executeUpdate();
+            return stmt.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
         }
     }
+
+
 
     public List<Product> getAllWithCategory() {
         List<Product> list = new ArrayList<>();
