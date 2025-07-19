@@ -4,42 +4,14 @@ import Pages.AccessPage;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.*;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.*;
 import DB.*;
-import java.util.Optional;
 
 public class InventoryDialog {
-    public static void showError(String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Error");
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-
-    public static boolean showConfirmation(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-
-        Optional<ButtonType> result = alert.showAndWait();
-        return result.isPresent() && result.get() == ButtonType.OK;
-    }
-
-    public static void showInfo(String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Information");
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-
     public static void show(Product productToEdit, ObservableList<Product> products) {
         StackPane root = AccessPage.root;
 
@@ -147,7 +119,7 @@ public class InventoryDialog {
 
                 root.getChildren().remove(overlay);
             } catch (Exception ex) {
-                showError("Invalid input. Please check the fields.");
+                PopUpDialog.showError("Please check every field.");
             }
         });
         cancelButton.setOnAction(e -> root.getChildren().remove(overlay));

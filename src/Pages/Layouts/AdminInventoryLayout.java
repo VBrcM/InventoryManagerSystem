@@ -1,7 +1,7 @@
 package Pages.Layouts;
 
 import DB.*;
-import Dialogs.InventoryDialog;
+import Dialogs.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -9,8 +9,6 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.control.cell.PropertyValueFactory;
-
-import java.sql.SQLException;
 import java.util.List;
 
 public class AdminInventoryLayout {
@@ -81,30 +79,28 @@ public class AdminInventoryLayout {
             if (selectedProduct != null) {
                 InventoryDialog.show(selectedProduct, products);
             } else {
-                InventoryDialog.showError("Please select a product to edit.");
+                PopUpDialog.showError("Please select a product to edit.");
             }
         });
 
         deleteBtn.setOnAction(e -> {
             Product selectedProduct = table.getSelectionModel().getSelectedItem();
             if (selectedProduct != null) {
-                boolean confirmed = InventoryDialog.showConfirmation("Delete Product",
-                        "Are you sure you want to delete this product?");
-
-                if (confirmed) {
+                PopUpDialog.showConfirmation("Delete Item", "Are you sure you want to delete this item?", () -> {
                     boolean dbDeleted = ProductDAO.delete(selectedProduct.getProductId());
 
                     if (dbDeleted) {
                         table.getItems().remove(selectedProduct);
-                        InventoryDialog.showInfo("Product deleted successfully.");
+                        PopUpDialog.showInfo("Product deleted successfully.");
                     } else {
-                        InventoryDialog.showError("Failed to delete product from database.");
+                        PopUpDialog.showError("Failed to delete product from database.");
                     }
-                }
+                });
             } else {
-                InventoryDialog.showError("Please select a product to delete.");
+                PopUpDialog.showError("Please select a product to delete.");
             }
         });
+
 
         return root;
     }
