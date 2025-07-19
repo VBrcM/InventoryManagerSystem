@@ -1,5 +1,8 @@
-package Pages;
+package Pages.Layouts;
 
+import Pages.AccessPage;
+import Pages.AdminAccess;
+import Pages.EmployeeAccess;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
