@@ -90,9 +90,17 @@ public class InventoryDialog {
             try {
                 String name = nameField.getText();
                 String categoryName = categoryField.getText();
-                double price = Double.parseDouble(priceField.getText());
-                int quantity = Integer.parseInt(quantityField.getText());
+                String priceText = priceField.getText();
+                String quantityText = quantityField.getText();
                 String description = descriptionField.getText();
+
+                if (name.isEmpty() || categoryName.isEmpty() || priceText.isEmpty() || quantityText.isEmpty()) {
+                    PopUpDialog.showError("Please fill in all fields.");
+                    return;
+                }
+
+                double price = Double.parseDouble(priceText);
+                int quantity = Integer.parseInt(quantityText);
 
                 CategoryDAO categoryDAO = new CategoryDAO();
                 Category categoryObj = categoryDAO.getOrCreateCategoryByName(categoryName);
@@ -100,26 +108,30 @@ public class InventoryDialog {
                 Product product = new Product();
                 product.setProductId(productToEdit != null ? productToEdit.getProductId() : 0);
                 product.setProduct(name);
-                product.setCategoryId(categoryObj.getCategoryId()); // ✅ category ID is now set
+                product.setCategoryId(categoryObj.getCategoryId());
+                product.setCategoryName(categoryObj.getCategory()); // Store for display
                 product.setPrice(price);
                 product.setStock(quantity);
                 product.setDescription(description);
 
                 ProductDAO dao = new ProductDAO();
                 if (productToEdit == null) {
-                    Product inserted = dao.insert(product); // returns inserted product with ID
-                    products.add(inserted); // ✅ add to ObservableList
+                    Product inserted = dao.insert(product);
+                    inserted.setCategoryName(categoryObj.getCategory());
+                    products.add(inserted);
                 } else {
                     dao.update(product);
                     int index = products.indexOf(productToEdit);
                     if (index != -1) {
-                        products.set(index, product); // ✅ update ObservableList
+                        products.set(index, product);
                     }
                 }
 
                 root.getChildren().remove(overlay);
+            } catch (NumberFormatException ex) {
+                PopUpDialog.showError("Invalid number format for price or quantity.");
             } catch (Exception ex) {
-                PopUpDialog.showError("Please check every field.");
+                PopUpDialog.showError("An error occurred. Please check your input.");
             }
         });
         cancelButton.setOnAction(e -> root.getChildren().remove(overlay));

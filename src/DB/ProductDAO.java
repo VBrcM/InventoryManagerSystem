@@ -71,6 +71,7 @@ public class ProductDAO {
                 Product p = new Product();
                 p.setProductId(rs.getInt("product_id"));
                 p.setCategoryId(rs.getInt("category_id"));
+                p.setCategoryName(rs.getString("category"));
                 p.setProduct(rs.getString("product"));
                 p.setDescription(rs.getString("description"));
                 p.setPrice(rs.getDouble("p_price"));

@@ -10,6 +10,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import java.util.List;
+import javafx.collections.transformation.FilteredList;
 
 public class AdminInventoryLayout {
 
@@ -47,7 +48,23 @@ public class AdminInventoryLayout {
         ProductDAO dao = new ProductDAO();
         List<Product> productList = dao.getAllWithCategory();
         ObservableList<Product> products = FXCollections.observableArrayList(productList);
-        table.setItems(products);
+        FilteredList<Product> filteredList = new FilteredList<>(products, p -> true);
+        table.setItems(filteredList);
+
+        //SEARCH
+        searchField.textProperty().addListener((obs, oldVal, newVal) -> {
+            String lower = newVal.toLowerCase();
+            filteredList.setPredicate(p -> {
+                String productName = p.getProduct() != null ? p.getProduct().toLowerCase() : "";
+                String categoryName = p.getCategoryName() != null ? p.getCategoryName().toLowerCase() : "";
+                return productName.contains(lower) || categoryName.contains(lower);
+            });
+            for (Product p : products) {
+                System.out.println("Product: " + p.getProduct() + ", Category: " + p.getCategoryName());
+            }
+        });
+
+
 
 
         // ===== Action Buttons =====
