@@ -289,3 +289,45 @@
     -fx-border-color: transparent;
     -fx-prompt-text-fill: #888;
 }
+
+.scroll-pane:focused {
+    -fx-effect: none;
+    -fx-background-insets: 0;
+    -fx-background-color: transparent;
+}
+
+.scroll-pane:focused,
+.list-view:focused,
+.table-view:focused,
+.text-area:focused,
+.text-field:focused {
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+}
+
+.scroll-pane {
+    -fx-background-color: #1e1e1e;
+    -fx-border-color: transparent;
+}
+
+.scroll-bar:vertical, .scroll-bar:horizontal {
+    -fx-background-color: #2e2e2e;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: #555;
+    -fx-background-insets: 2;
+    -fx-background-radius: 6;
+}
+
+.scroll-bar .increment-button, .scroll-bar .decrement-button {
+    -fx-background-color: #2e2e2e;
+}
+
+.scroll-bar .thumb:hover {
+    -fx-background-color: #777;
+}
+

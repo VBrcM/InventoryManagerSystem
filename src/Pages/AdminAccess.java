@@ -1,5 +1,6 @@
 package Pages;
 
+import Pages.Layouts.AccessLayout;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -36,13 +37,21 @@ public class AdminAccess {
         Button exitBtn = makeNavButton("Exit", "🚪");
 
         // ===== Grouping Top and Bottom Buttons =====
-        VBox topButtonBox = new VBox(15, wrap(dashboardBtn), wrap(inventoryBtn), wrap(reportsBtn));
+
+        // Normal buttons
+        VBox topButtons = new VBox(15, wrap(dashboardBtn), wrap(inventoryBtn));
+        topButtons.setAlignment(Pos.TOP_CENTER);
+
+        // Right-aligned reports button
+        HBox reportsRow = new HBox(wrap(reportsBtn));
+        reportsRow.setAlignment(Pos.CENTER_RIGHT);
+
+        VBox topButtonBox = new VBox(15, topButtons, reportsRow);
         topButtonBox.setAlignment(Pos.TOP_CENTER);
 
         VBox bottomButtonBox = new VBox(15, wrap(logoutBtn), wrap(exitBtn));
         bottomButtonBox.setAlignment(Pos.BOTTOM_CENTER);
 
-        // ===== Spacer Between Top and Bottom Buttons =====
         Region spacer = new Region();
         VBox.setVgrow(spacer, Priority.ALWAYS);
 
@@ -69,12 +78,11 @@ public class AdminAccess {
         // ===== Button Actions =====
         dashboardBtn.setOnAction(e -> layout.setCenter(Pages.Layouts.AdminDashboardLayout.build()));
         inventoryBtn.setOnAction(e -> layout.setCenter(Pages.Layouts.AdminInventoryLayout.build()));
-        reportsBtn.setOnAction(e -> layout.setCenter(buildReports()));
+        reportsBtn.setOnAction(e -> layout.setCenter(Pages.Layouts.AdminReportsLayout.build(layout)));
         logoutBtn.setOnAction(e -> AccessLayout.show());
         exitBtn.setOnAction(e -> Platform.exit());
     }
 
-    // ===== Helper to Create a Styled Navigation Button =====
     private static Button makeNavButton(String text, String icon) {
         Button btn = new Button(icon + "  " + text);
         btn.getStyleClass().add("nav-button");
@@ -83,28 +91,14 @@ public class AdminAccess {
         return btn;
     }
 
-    // ===== Wrap Button in Centered HBox for Alignment =====
     private static HBox wrap(Button button) {
         HBox wrapper = new HBox(button);
         wrapper.setAlignment(Pos.CENTER);
         return wrapper;
     }
 
-    // ===== Placeholder Inventory Page (Unused) =====
     private static VBox buildInventory() {
         Label title = new Label("Inventory Management (Placeholder)");
-        title.setId("title-label");
-
-        VBox box = new VBox(title);
-        box.setAlignment(Pos.CENTER);
-        box.getStyleClass().add("dashboard");
-        VBox.setVgrow(box, Priority.ALWAYS);
-        return box;
-    }
-
-    // ===== Placeholder Reports Page =====
-    private static VBox buildReports() {
-        Label title = new Label("Reports Section (Placeholder)");
         title.setId("title-label");
 
         VBox box = new VBox(title);
