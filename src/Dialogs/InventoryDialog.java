@@ -12,15 +12,15 @@ import javafx.scene.layout.*;
 import DB.*;
 
 public class InventoryDialog {
-    public static void show(Product productToEdit, ObservableList<Product> products) {
+    public static void show(Product productToEdit, ObservableList<Product> products, Runnable onUpdated) {
         StackPane root = AccessPage.root;
 
-        // Overlay
+        // Overlay to darken the background and focus user on dialog
         StackPane overlay = new StackPane();
         overlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.6);");
         overlay.setPadding(new Insets(300));
 
-        // Dialog container
+        // Dialog container with styling
         VBox dialogBox = new VBox(18);
         dialogBox.setPadding(new Insets(10));
         dialogBox.setAlignment(Pos.CENTER);
@@ -29,48 +29,43 @@ public class InventoryDialog {
         dialogBox.setPrefWidth(400);
         dialogBox.setPrefHeight(300);
 
+        // Title of the dialog
         Label title = new Label("Add Inventory Item");
         title.getStyleClass().add("dialog-title");
 
-        double rowWidth = dialogBox.getLayoutBounds().getWidth();
-        double rowHeight = 36;
-
-        //ITEM
+        // Input fields for item details
         TextField nameField = new TextField();
         nameField.setPromptText("Item Name");
-        nameField.setPrefSize(rowWidth, rowHeight);
+        nameField.setPrefSize(400, 36);
         nameField.getStyleClass().add("dialog-pane");
 
-        //CATEGORY
         TextField categoryField = new TextField();
         categoryField.setPromptText("Category");
-        categoryField.setPrefSize(300, rowHeight);
+        categoryField.setPrefSize(300, 36);
         categoryField.getStyleClass().add("dialog-pane");
 
-        //PRICE
         TextField priceField = new TextField();
         priceField.setPromptText("Price");
-        priceField.setPrefSize(190, rowHeight);
+        priceField.setPrefSize(190, 36);
         priceField.getStyleClass().add("dialog-pane");
 
-        //QUANTITY
         TextField quantityField = new TextField();
         quantityField.setPromptText("Quantity");
-        quantityField.setPrefSize(190, rowHeight);
+        quantityField.setPrefSize(190, 36);
         quantityField.getStyleClass().add("dialog-pane");
 
-        HBox rowInputs = new HBox(rowWidth/3, categoryField, priceField, quantityField);
+        // Group price, category, and quantity inputs in a row
+        HBox rowInputs = new HBox(10, categoryField, priceField, quantityField);
         rowInputs.setAlignment(Pos.CENTER);
-        rowInputs.setSpacing(10);
 
-        //DESCRIPTION
+        // Text area for optional product description
         TextArea descriptionField = new TextArea();
         descriptionField.setPromptText("Description");
-        descriptionField.setPrefSize(rowWidth, rowHeight * 3);
+        descriptionField.setPrefSize(400, 108);
         descriptionField.setWrapText(true);
-        descriptionField.getStyleClass().add("dialog-pane");
+        descriptionField.getStyleClass().add("desc-pane");
 
-        //For Editing
+        // If editing, populate the fields with the existing product's values
         if (productToEdit != null) {
             nameField.setText(productToEdit.getProduct());
             categoryField.setText(productToEdit.getCategoryName());
@@ -79,66 +74,84 @@ public class InventoryDialog {
             descriptionField.setText(productToEdit.getDescription());
         }
 
+        // Buttons for saving and cancelling
         Button saveButton = new Button("Save");
         Button cancelButton = new Button("Cancel");
         saveButton.getStyleClass().add("inventory-button");
         cancelButton.getStyleClass().add("inventory-button");
 
-
-        //SAVE BUTTON TO UI-TO-DB
+        // Handle Save action
         saveButton.setOnAction(e -> {
             try {
+                // Read input values
                 String name = nameField.getText();
                 String categoryName = categoryField.getText();
                 String priceText = priceField.getText();
                 String quantityText = quantityField.getText();
                 String description = descriptionField.getText();
 
+                // Basic validation for required fields
                 if (name.isEmpty() || categoryName.isEmpty() || priceText.isEmpty() || quantityText.isEmpty()) {
                     PopUpDialog.showError("Please fill in all fields.");
                     return;
                 }
 
+                // Convert price and quantity
                 double price = Double.parseDouble(priceText);
                 int quantity = Integer.parseInt(quantityText);
 
+                // Find or create category by name
                 CategoryDAO categoryDAO = new CategoryDAO();
                 Category categoryObj = categoryDAO.getOrCreateCategoryByName(categoryName);
 
+                // Prepare product object to insert or update
                 Product product = new Product();
                 product.setProductId(productToEdit != null ? productToEdit.getProductId() : 0);
                 product.setProduct(name);
                 product.setCategoryId(categoryObj.getCategoryId());
-                product.setCategoryName(categoryObj.getCategory()); // Store for display
+                product.setCategoryName(categoryObj.getCategory()); // for UI purposes
                 product.setPrice(price);
                 product.setStock(quantity);
                 product.setDescription(description);
 
                 ProductDAO dao = new ProductDAO();
+
+                // Insert or update in DB
                 if (productToEdit == null) {
+                    // New product
                     Product inserted = dao.insert(product);
                     inserted.setCategoryName(categoryObj.getCategory());
-                    products.add(inserted);
+                    products.add(inserted); // Add to ObservableList
                 } else {
+                    // Update existing product
                     dao.update(product);
                     int index = products.indexOf(productToEdit);
                     if (index != -1) {
-                        products.set(index, product);
+                        products.set(index, product); // Replace updated product
                     }
                 }
 
+                // Close the dialog
                 root.getChildren().remove(overlay);
+
             } catch (NumberFormatException ex) {
                 PopUpDialog.showError("Invalid number format for price or quantity.");
             } catch (Exception ex) {
                 PopUpDialog.showError("An error occurred. Please check your input.");
             }
+
+            // Run optional callback for UI refresh
+            onUpdated.run();
         });
+
+        // Close dialog on cancel
         cancelButton.setOnAction(e -> root.getChildren().remove(overlay));
 
+        // Layout buttons
         HBox buttonBox = new HBox(20, saveButton, cancelButton);
         buttonBox.setAlignment(Pos.CENTER);
 
+        // Assemble the full dialog
         dialogBox.getChildren().addAll(
                 title,
                 nameField,
@@ -147,8 +160,11 @@ public class InventoryDialog {
                 buttonBox
         );
 
+        // Add dialog to overlay
         overlay.getChildren().add(dialogBox);
         StackPane.setAlignment(dialogBox, Pos.CENTER);
+
+        // Display the overlay in the main root pane
         root.getChildren().add(overlay);
     }
 }

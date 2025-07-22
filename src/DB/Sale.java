@@ -1,31 +1,26 @@
 package DB;
 
+import java.time.LocalDateTime;
+
 public class Sale {
-    private int saleId;
-    private int saleQty;
-    private String saleDate;
+    private int id;
+    private LocalDateTime dateTime;
 
-    public int getSaleId() {
-        return saleId;
+    public Sale(int id, LocalDateTime dateTime) {
+        this.id = id;
+        this.dateTime = dateTime;
     }
 
-    public void setSaleId(int saleId) {
-        this.saleId = saleId;
+    public Sale(LocalDateTime dateTime) {
+        this.dateTime = dateTime;
     }
 
-    public int getSaleQty() {
-        return saleQty;
+    public int getId() {
+        return id;
     }
 
-    public void setSaleQty(int saleQty) {
-        this.saleQty = saleQty;
-    }
-
-    public String getSaleDate() {
-        return saleDate;
-    }
-
-    public void setSaleDate(String saleDate) {
-        this.saleDate = saleDate;
+    public LocalDateTime getDateTime() {
+        return dateTime;
     }
 }
+

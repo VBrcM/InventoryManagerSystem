@@ -1,17 +1,11 @@
 package Dialogs;
 
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
 import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
 import Pages.AccessPage;
 
 public class DialogManager {
-
+    // Displays the given dialog node inside an overlay with dimmed background
     public static void showDialog(Node dialogContent) {
         StackPane overlay = new StackPane();
         overlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.5);");
@@ -27,36 +21,10 @@ public class DialogManager {
         overlay.setOnMouseClicked(e -> {
             if (e.getTarget() == overlay) {
                 AccessPage.root.getChildren().remove(overlay);
+                System.out.println("Dialog closed by clicking outside");
             }
         });
-    }
 
-    public static VBox createSampleDialog() {
-        VBox dialogContent = new VBox(15);
-        dialogContent.setAlignment(Pos.CENTER_LEFT);
-        dialogContent.setPadding(new Insets(20));
-
-        TextField nameField = new TextField();
-        nameField.setPromptText("Item Name");
-
-        TextField qtyField = new TextField();
-        qtyField.setPromptText("Quantity");
-
-        TextField descField = new TextField();
-        descField.setPromptText("Description");
-
-        Button closeButton = new Button("Close");
-        closeButton.setOnAction(e -> {
-            AccessPage.root.getChildren().remove(AccessPage.root.getChildren().size() - 1);
-        });
-
-        dialogContent.getChildren().addAll(
-                new Label("Item Name"), nameField,
-                new Label("Quantity"), qtyField,
-                new Label("Description"), descField,
-                closeButton
-        );
-
-        return dialogContent;
+        System.out.println("Dialog displayed");
     }
 }
