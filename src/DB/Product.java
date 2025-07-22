@@ -7,8 +7,6 @@ public class Product {
     private String description;
     private double price;
     private int stock;
-    private int reorderLevel;
-    private String status;
     private String categoryName;
 
     public Product() {
@@ -69,22 +67,6 @@ public class Product {
 
     public void setStock(int stock) {
         this.stock = stock;
-    }
-
-    public int getReorderLevel() {
-        return reorderLevel;
-    }
-
-    public void setReorderLevel(int reorderLevel) {
-        this.reorderLevel = reorderLevel;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
     }
 
     public String getCategoryName() {

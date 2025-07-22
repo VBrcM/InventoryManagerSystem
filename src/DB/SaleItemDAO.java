@@ -25,7 +25,7 @@ public class SaleItemDAO {
     public static void insert(int saleId, int productId, int qty) throws SQLException {
         String sql = """
         INSERT INTO Sale_item (sale_id, product_id, si_date, si_qty, si_price)
-        VALUES (?, ?, ?, ?, (SELECT p_price FROM product WHERE product_id = ?))
+        VALUES (?, ?, ?, ?, (SELECT product_price FROM product WHERE product_id = ?))
     """;
 
         try (Connection conn = JDBC.connect();

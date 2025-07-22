@@ -9,7 +9,7 @@ public class Transaction {
     private String productName;
     private String categoryName;
     private int quantity;
-    private String type; // "ADD" or "REDUCE"
+    private String type;
     private Timestamp transDate;
     private LocalDate date;
 

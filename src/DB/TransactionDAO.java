@@ -274,7 +274,7 @@ public class TransactionDAO {
                         rs.getInt("product_id"),
                         rs.getString("product"),
                         rs.getInt("category_id"),
-                        rs.getDouble("p_price"),
+                        rs.getDouble("product_price"),
                         rs.getInt("stock"),
                         rs.getString("description")
                 );

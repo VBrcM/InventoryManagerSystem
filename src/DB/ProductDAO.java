@@ -7,7 +7,7 @@ public class ProductDAO {
 
     // Inserts a new product and returns it with the generated ID
     public Product insert(Product product) throws SQLException {
-        String sql = "INSERT INTO product (product, category_id, p_price, stock, description) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO product (product, category_id, product_price, stock, description) VALUES (?, ?, ?, ?, ?)";
 
         try (Connection conn = JDBC.connect();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -29,7 +29,7 @@ public class ProductDAO {
 
     // Updates an existing product
     public void update(Product p) throws SQLException {
-        String sql = "UPDATE Product SET category_id=?, product=?, description=?, p_price=?, stock=?, reorder_level=?, status=? WHERE product_id=?";
+        String sql = "UPDATE Product SET category_id=?, product=?, description=?, product_price=?, stock=? WHERE product_id=?";
         try (Connection conn = JDBC.connect();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, p.getCategoryId());
@@ -37,9 +37,7 @@ public class ProductDAO {
             stmt.setString(3, p.getDescription());
             stmt.setDouble(4, p.getPrice());
             stmt.setInt(5, p.getStock());
-            stmt.setInt(6, p.getReorderLevel());
-            stmt.setString(7, p.getStatus());
-            stmt.setInt(8, p.getProductId());
+            stmt.setInt(6, p.getProductId());
             stmt.executeUpdate();
         }
     }
@@ -100,11 +98,8 @@ public class ProductDAO {
                 p.setCategoryName(rs.getString("category"));
                 p.setProduct(rs.getString("product"));
                 p.setDescription(rs.getString("description"));
-                p.setPrice(rs.getDouble("p_price"));
+                p.setPrice(rs.getDouble("product_price"));
                 p.setStock(rs.getInt("stock"));
-                p.setReorderLevel(rs.getInt("reorder_level"));
-                p.setStatus(rs.getString("status"));
-                p.setStatus(rs.getString("category")); // overwrite with category name
 
                 list.add(p);
             }
@@ -135,7 +130,7 @@ public class ProductDAO {
     // Calculates the total value of all stock (price × quantity)
     public static double getTotalStockValue() {
         double total = 0;
-        String query = "SELECT SUM(stock * p_price) FROM Product";
+        String query = "SELECT SUM(stock * product_price) FROM Product";
         try (Connection conn = JDBC.connect();
              PreparedStatement stmt = conn.prepareStatement(query);
              ResultSet rs = stmt.executeQuery()) {
