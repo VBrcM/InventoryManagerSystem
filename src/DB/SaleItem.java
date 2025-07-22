@@ -7,6 +7,8 @@ public class SaleItem {
     private String siDate;
     private int quantity;
     private double price;
+    private String productName;
+    private String categoryName;
 
     public int getSiId() {
         return siId;
@@ -55,5 +57,13 @@ public class SaleItem {
     public void setPrice(double price) {
         this.price = price;
     }
+
+    public String getProductName() { return productName;}
+
+    public void setProductName(String productName) {this.productName = productName;}
+
+    public String getCategoryName() {return categoryName;}
+
+    public void setCategoryName(String categoryName) {this.categoryName = categoryName;}
 }
 

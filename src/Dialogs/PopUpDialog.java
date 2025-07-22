@@ -5,16 +5,12 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
 
 public class PopUpDialog {
 
     public static void showInfo(String message) {
-        showOverlay("Information", message, false, null);
+        showOverlay("Info", message, false, null);
     }
 
     public static void showError(String message) {
@@ -26,39 +22,34 @@ public class PopUpDialog {
     }
 
     private static void showOverlay(String titleText, String message, boolean isConfirm, Runnable onConfirm) {
-        StackPane root = AccessPage.root; // Assuming AccessPage.root is your main StackPane
+        StackPane root = AccessPage.root;
 
-        // === Dim Background Overlay ===
         StackPane overlay = new StackPane();
-        overlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.6);");
+        overlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.5);");
         overlay.prefWidthProperty().bind(root.widthProperty());
         overlay.prefHeightProperty().bind(root.heightProperty());
-        overlay.setOnMouseClicked(MouseEvent::consume); // Block background clicks
 
-        // === Dialog Box ===
         VBox dialogBox = new VBox(20);
-        dialogBox.setAlignment(Pos.CENTER);
-        dialogBox.setPadding(new Insets(30));
-        dialogBox.setStyle("-fx-background-color: #2e2e2e; -fx-background-radius: 12;");
+        dialogBox.setPadding(new Insets(20));
+        dialogBox.setAlignment(Pos.CENTER_LEFT);
         dialogBox.setMaxWidth(500);
+        dialogBox.setStyle("-fx-background-color: #3a3a3a; -fx-background-radius: 6;");
+        dialogBox.setFillWidth(true); // prevent stretching
+        dialogBox.setMaxHeight(Region.USE_PREF_SIZE); // Allow height to adjust to content
 
-        // === Title Label ===
         Label title = new Label(titleText);
-        title.setFont(Font.font("System", FontWeight.BOLD, 20));
-        title.setTextFill(Color.WHITE);
+        title.setStyle("-fx-text-fill: white; -fx-font-size: 18px;");
 
-        // === Message Label ===
         Label body = new Label(message);
         body.setWrapText(true);
-        body.setStyle("-fx-text-fill: #cccccc; -fx-font-size: 14px;");
-        body.setMaxWidth(400);
+        body.setMaxWidth(460);
+        body.setStyle("-fx-text-fill: white; -fx-font-size: 14px;");
 
-        // === Buttons ===
-        HBox buttons = new HBox(15);
-        buttons.setAlignment(Pos.CENTER);
+        HBox buttonBox = new HBox(10);
+        buttonBox.setAlignment(Pos.CENTER_RIGHT);
 
         Button okButton = new Button(isConfirm ? "Yes" : "OK");
-        okButton.setStyle("-fx-background-color: #00bcd4; -fx-text-fill: white; -fx-background-radius: 6; -fx-padding: 8 16;");
+        okButton.setStyle(buttonStyle("#666666"));
         okButton.setOnAction(e -> {
             root.getChildren().remove(overlay);
             if (onConfirm != null) onConfirm.run();
@@ -66,17 +57,32 @@ public class PopUpDialog {
 
         if (isConfirm) {
             Button cancelButton = new Button("No");
-            cancelButton.setStyle("-fx-background-color: #555; -fx-text-fill: white; -fx-background-radius: 6; -fx-padding: 8 16;");
+            cancelButton.setStyle(buttonStyle("#444444"));
             cancelButton.setOnAction(e -> root.getChildren().remove(overlay));
-            buttons.getChildren().addAll(okButton, cancelButton);
+            buttonBox.getChildren().addAll(okButton, cancelButton);
         } else {
-            buttons.getChildren().add(okButton);
+            buttonBox.getChildren().add(okButton);
         }
 
-        dialogBox.getChildren().addAll(title, body, buttons);
-        overlay.getChildren().add(dialogBox);
-        StackPane.setAlignment(dialogBox, Pos.CENTER);
+        dialogBox.getChildren().addAll(title, body, buttonBox);
+
+        StackPane dialogWrapper = new StackPane(dialogBox);
+        dialogWrapper.setStyle("-fx-padding: 20;");
+        overlay.getChildren().add(dialogWrapper);
+
+        overlay.setOnMouseClicked(e -> {
+            if (e.getTarget() == overlay) {
+                root.getChildren().remove(overlay);
+            }
+        });
 
         root.getChildren().add(overlay);
+    }
+
+    private static String buttonStyle(String color) {
+        return String.format(
+                "-fx-background-color: %s; -fx-text-fill: white; -fx-background-radius: 6; -fx-padding: 10 20;",
+                color
+        );
     }
 }

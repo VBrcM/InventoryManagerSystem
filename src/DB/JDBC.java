@@ -2,7 +2,6 @@ package DB;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class JDBC {
@@ -13,12 +12,11 @@ public class JDBC {
 
         try {
             Connection connection = DriverManager.getConnection(url, user, password);
-            System.out.println("Connected successfully!");
+            System.out.println("[DEBUG] Connected successfully to database.");
             return connection;
         } catch (SQLException e) {
-            System.out.println("Connection failed!");
+            System.err.println("[ERROR] Failed to connect to database: " + e.getMessage());
             return null;
         }
-
     }
 }

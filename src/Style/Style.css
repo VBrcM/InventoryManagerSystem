@@ -12,6 +12,7 @@
     -fx-font-size: 18px;
     -fx-text-fill: #ffffff;
 }
+
 #title-label {
     -fx-text-fill: white;
     -fx-font-size: 32px;
@@ -33,26 +34,8 @@
     -fx-border-color: #444;
 }
 
-/* Submit button */
-.submit-button {
-    -fx-font-size: 20px;
-    -fx-pref-width: 500px;
-    -fx-min-width: 400px;
-    -fx-max-width: 700px;
-    -fx-pref-height: 60px;
-    -fx-min-height: 60px;
-    -fx-max-height: 90px;
-    -fx-background-color: #3a3a3a;
-    -fx-text-fill: white;
-    -fx-border-color: #555;
-    -fx-cursor: hand;
-}
-.submit-button:hover {
-    -fx-background-color: #555;
-    -fx-text-fill: #ffffff;
-}
-
-/* Exit button */
+/* Submit and Exit buttons */
+.submit-button,
 .exit-button {
     -fx-font-size: 20px;
     -fx-pref-width: 500px;
@@ -66,6 +49,7 @@
     -fx-border-color: #555;
     -fx-cursor: hand;
 }
+.submit-button:hover,
 .exit-button:hover {
     -fx-background-color: #555;
     -fx-text-fill: #ffffff;
@@ -78,14 +62,6 @@
     -fx-text-fill: white;
     -fx-padding: 0 0 20 0;
     -fx-text-alignment: center;
-}
-.navbar-title-line {
-    -fx-font-size: 24px;
-    -fx-font-weight: bold;
-    -fx-text-fill: white;
-    -fx-text-alignment: center;
-    -fx-alignment: center;
-    -fx-padding: 0;
 }
 
 /* Navbar container */
@@ -176,11 +152,10 @@
 .table-view .column-header-background {
     -fx-background-color: #3a3a3a;
 }
-.table-view .column-header,
-.table-view .filler {
-    -fx-size: 35px;
-    -fx-border-color: transparent;
-    -fx-background-color: #3a3a3a;
+.table-view .column-header {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
 }
 .table-view .label {
     -fx-text-fill: white;
@@ -193,6 +168,7 @@
 .table-row-cell:filled:selected,
 .table-row-cell:filled:selected:hover {
     -fx-background-color: #555;
+    -fx-text-fill: white;
 }
 .table-row-cell:hover {
     -fx-background-color: #383838;
@@ -224,7 +200,6 @@
 }
 .dialog-pane {
     -fx-background-radius: 10;
-
     -fx-background-color: #232323;
     -fx-text-fill: #ffffff;
     -fx-prompt-text-fill: #aaaaaa;
@@ -234,7 +209,6 @@
 .dialog-pane .text-area {
     -fx-background-radius: 6;
     -fx-border-radius: 6;
-
     -fx-background-color: #232323;
     -fx-text-fill: #ffffff;
     -fx-prompt-text-fill: #aaaaaa;
@@ -257,6 +231,7 @@
     -fx-spacing: 10;
 }
 
+/* Text Area */
 .text-area.dialog-pane {
     -fx-control-inner-background: #232323;
     -fx-background-color: #232323;
@@ -290,44 +265,86 @@
     -fx-prompt-text-fill: #888;
 }
 
+/* Scroll pane and scrollbar */
 .scroll-pane:focused {
     -fx-effect: none;
     -fx-background-insets: 0;
     -fx-background-color: transparent;
 }
-
-.scroll-pane:focused,
-.list-view:focused,
-.table-view:focused,
-.text-area:focused,
-.text-field:focused {
+.scroll-pane,
+.list-view,
+.table-view,
+.text-area,
+.text-field {
     -fx-focus-color: transparent;
     -fx-faint-focus-color: transparent;
     -fx-background-insets: 0;
     -fx-border-color: transparent;
     -fx-border-width: 0;
 }
-
 .scroll-pane {
     -fx-background-color: #1e1e1e;
     -fx-border-color: transparent;
 }
-
-.scroll-bar:vertical, .scroll-bar:horizontal {
+.scroll-bar:vertical,
+.scroll-bar:horizontal {
     -fx-background-color: #2e2e2e;
 }
-
 .scroll-bar .thumb {
     -fx-background-color: #555;
     -fx-background-insets: 2;
     -fx-background-radius: 6;
 }
-
-.scroll-bar .increment-button, .scroll-bar .decrement-button {
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
     -fx-background-color: #2e2e2e;
 }
-
 .scroll-bar .thumb:hover {
     -fx-background-color: #777;
 }
 
+/* Chart legend */
+.chart-legend {
+    -fx-background-color: transparent;
+    -fx-padding: 10;
+}
+.chart-legend-item {
+    -fx-background-color: #2e2e2e;
+    -fx-background-radius: 6;
+    -fx-padding: 5 8;
+    -fx-spacing: 8;
+}
+.chart-legend-item Label {
+    -fx-text-fill: white;
+    -fx-font-size: 13px;
+}
+.chart-legend-item-symbol {
+    -fx-border-color: transparent;
+}
+
+/* Table header text color */
+.table-view .column-header .label {
+    -fx-text-fill: white;
+}
+
+/* Table cell text color */
+.table-view .cell {
+    -fx-text-fill: white;
+}
+
+/* Table background */
+.table-view {
+    -fx-background-color: #1e1e1e;
+}
+
+/* Transparent row backgrounds */
+.table-row-cell {
+    -fx-background-color: transparent;
+}
+
+/* Selected row highlight */
+.table-row-cell:filled:selected,
+.table-row-cell:focused:selected {
+    -fx-background-color: #444444;
+    -fx-text-fill: white;
+}

@@ -61,7 +61,7 @@ public class AdminAccess {
         // ===== Main Layout =====
         BorderPane layout = new BorderPane();
         layout.setLeft(navBar);
-        layout.setCenter(Pages.Layouts.AdminDashboardLayout.build()); // Default view
+        layout.setCenter(Pages.Layouts.AdminDashboardLayout.build(layout)); // Default view
         layout.setPrefSize(Double.MAX_VALUE, Double.MAX_VALUE);
         BorderPane.setAlignment(navBar, Pos.TOP_LEFT);
 
@@ -76,7 +76,7 @@ public class AdminAccess {
         AccessPage.root.getChildren().setAll(layout);
 
         // ===== Button Actions =====
-        dashboardBtn.setOnAction(e -> layout.setCenter(Pages.Layouts.AdminDashboardLayout.build()));
+        dashboardBtn.setOnAction(e -> layout.setCenter(Pages.Layouts.AdminDashboardLayout.build(layout)));
         inventoryBtn.setOnAction(e -> layout.setCenter(Pages.Layouts.AdminInventoryLayout.build()));
         reportsBtn.setOnAction(e -> layout.setCenter(Pages.Layouts.AdminReportsLayout.build(layout)));
         logoutBtn.setOnAction(e -> AccessLayout.show());
@@ -95,16 +95,5 @@ public class AdminAccess {
         HBox wrapper = new HBox(button);
         wrapper.setAlignment(Pos.CENTER);
         return wrapper;
-    }
-
-    private static VBox buildInventory() {
-        Label title = new Label("Inventory Management (Placeholder)");
-        title.setId("title-label");
-
-        VBox box = new VBox(title);
-        box.setAlignment(Pos.CENTER);
-        box.getStyleClass().add("dashboard");
-        VBox.setVgrow(box, Priority.ALWAYS);
-        return box;
     }
 }
