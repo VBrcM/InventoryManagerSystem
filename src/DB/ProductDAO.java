@@ -139,4 +139,62 @@ public class ProductDAO {
         }
         return total;
     }
+
+    public static int getTotalItemsAddedToday() {
+        String sql = """
+            SELECT SUM(quantity) FROM transaction
+            WHERE type = 'ADD' AND DATE(trans_date) = CURDATE()
+        """;
+        try (Connection conn = JDBC.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public static int getTotalItemsReducedToday() {
+        String sql = """
+            SELECT SUM(quantity) FROM transaction
+            WHERE type = 'REDUCE' AND DATE(trans_date) = CURDATE()
+        """;
+        try (Connection conn = JDBC.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+    public static List<Product> getAll() {
+        List<Product> products = new ArrayList<>();
+
+        String sql = "SELECT p.*, c.category FROM product p " +
+                "JOIN category c ON p.category_id = c.category_id";
+
+        try (Connection conn = JDBC.connect();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                Product product = new Product();
+                product.setProductId(rs.getInt("product_id"));
+                product.setProduct(rs.getString("product"));
+                product.setCategoryId(rs.getInt("category_id"));
+                product.setCategoryName(rs.getString("category"));
+                product.setPrice(rs.getDouble("p_price"));
+                product.setStock(rs.getInt("stock"));
+                product.setDescription(rs.getString("description"));
+                products.add(product);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return products;
+    }
 }

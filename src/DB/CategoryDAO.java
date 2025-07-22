@@ -120,7 +120,7 @@ public class CategoryDAO {
             System.out.println("[DEBUG] Fetching stock distribution by category...");
 
             while (rs.next()) {
-                String category = rs.getString("category_name");
+                String category = rs.getString("category");
                 int stock = rs.getInt("total_stock");
                 data.put(category, stock);
                 System.out.println("[DEBUG] Category: " + category + ", Stock: " + stock);
@@ -132,5 +132,24 @@ public class CategoryDAO {
         }
 
         return data;
+    }
+
+    public static List<String> getAllCategoryNames() {
+        List<String> categoryNames = new ArrayList<>();
+
+        String sql = "SELECT category FROM category";
+        try (Connection conn = JDBC.connect();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                categoryNames.add(rs.getString("category"));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return categoryNames;
     }
 }

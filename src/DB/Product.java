@@ -11,6 +11,18 @@ public class Product {
     private String status;
     private String categoryName;
 
+    public Product() {
+    }
+
+    public Product(int productId, String product, int categoryId, double price, int stock, String description) {
+        this.productId = productId;
+        this.product = product;
+        this.categoryId = categoryId;
+        this.price = price;
+        this.stock = stock;
+        this.description = description;
+    }
+
     public int getProductId() {
         return productId;
     }

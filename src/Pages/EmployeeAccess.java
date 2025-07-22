@@ -9,6 +9,8 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
+import javax.print.attribute.standard.PagesPerMinute;
+
 public class EmployeeAccess {
 
     public static void show(Stage stage) {
@@ -21,8 +23,8 @@ public class EmployeeAccess {
         VBox.setVgrow(navBar, Priority.ALWAYS);
 
         // ===== Title (Inventory Manager) =====
-        Label title1 = new Label("Inventory");
-        Label title2 = new Label("Manager");
+        Label title1 = new Label("Logistic");
+        Label title2 = new Label("Head");
         title1.getStyleClass().add("navbar-title-line");
         title2.getStyleClass().add("navbar-title-line");
         VBox titleBox = new VBox(title1, title2);
@@ -32,7 +34,7 @@ public class EmployeeAccess {
         // ===== Navigation Buttons =====
         Button dashboardBtn = makeNavButton("Dashboard", "📊");
         Button transactionBtn = makeNavButton("Transaction", "📦");
-        Button transRecordsBtn = makeNavButton("Transaction Records", "📈");
+        Button transRecordsBtn = makeNavButton("Transaction Log", "📈");
         Button logoutBtn = makeNavButton("Logout", "🔒");
         Button exitBtn = makeNavButton("Exit", "🚪");
 
@@ -53,7 +55,7 @@ public class EmployeeAccess {
         // ===== Main Layout =====
         BorderPane layout = new BorderPane();
         layout.setLeft(navBar);
-        layout.setCenter(buildReports()); // Default view
+        layout.setCenter(Pages.Layouts.EmployeeDashboardLayout.build(layout)); // Default view
         layout.setPrefSize(Double.MAX_VALUE, Double.MAX_VALUE);
         BorderPane.setAlignment(navBar, Pos.TOP_LEFT);
 
@@ -68,9 +70,9 @@ public class EmployeeAccess {
         AccessPage.root.getChildren().setAll(layout);
 
         // ===== Button Actions =====
-        dashboardBtn.setOnAction(e -> layout.setCenter(buildReports()));
-        transactionBtn.setOnAction(e -> layout.setCenter(buildReports()));
-        transRecordsBtn.setOnAction(e -> layout.setCenter(buildReports()));
+        dashboardBtn.setOnAction(e -> layout.setCenter(Pages.Layouts.EmployeeDashboardLayout.build(layout)));
+        transactionBtn.setOnAction(e -> layout.setCenter(Pages.Layouts.EmployeeTransactionLayout.build()));
+        transRecordsBtn.setOnAction(e -> layout.setCenter(Pages.Layouts.EmployeeTransactionLogLayout.build(layout)));
         logoutBtn.setOnAction(e -> AccessLayout.show());
         exitBtn.setOnAction(e -> Platform.exit());
     }

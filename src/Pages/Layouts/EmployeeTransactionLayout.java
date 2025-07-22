@@ -1,0 +1,124 @@
+package Pages.Layouts;
+
+import DB.*;
+import Dialogs.*;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.*;
+
+import java.util.List;
+
+public class EmployeeTransactionLayout {
+
+    public static StackPane build() {
+        return build(false);  // Default: show all products
+    }
+
+    public static StackPane build(boolean showOnlyOutOfStock) {
+        Label title = new Label("Product Stock Transaction");
+        title.setId("title-label");
+
+        TextField searchField = new TextField();
+        searchField.setPromptText("Search product...");
+        searchField.getStyleClass().add("input-field");
+
+        TableView<Product> table = new TableView<>();
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        table.getStyleClass().add("table-view");
+
+        TableColumn<Product, String> nameCol = new TableColumn<>("Product");
+        nameCol.setCellValueFactory(new PropertyValueFactory<>("product"));
+
+        TableColumn<Product, String> categoryCol = new TableColumn<>("Category");
+        categoryCol.setCellValueFactory(new PropertyValueFactory<>("categoryName"));
+
+        TableColumn<Product, Double> priceCol = new TableColumn<>("Price");
+        priceCol.setCellValueFactory(new PropertyValueFactory<>("price"));
+
+        TableColumn<Product, Integer> stockCol = new TableColumn<>("Stock");
+        stockCol.setCellValueFactory(new PropertyValueFactory<>("stock"));
+
+        table.getColumns().addAll(nameCol, categoryCol, priceCol, stockCol);
+        VBox.setVgrow(table, Priority.ALWAYS);
+
+        ProductDAO dao = new ProductDAO();
+        List<Product> productList = dao.getAllWithCategory();
+
+        if (showOnlyOutOfStock) {
+            productList.removeIf(p -> p.getStock() > 0);
+        }
+
+        ObservableList<Product> products = FXCollections.observableArrayList(productList);
+        FilteredList<Product> filteredList = new FilteredList<>(products, p -> true);
+        table.setItems(filteredList);
+
+        searchField.textProperty().addListener((obs, oldVal, newVal) -> {
+            String lower = newVal.toLowerCase();
+            filteredList.setPredicate(p -> {
+                String productName = p.getProduct() != null ? p.getProduct().toLowerCase() : "";
+                String categoryName = p.getCategoryName() != null ? p.getCategoryName().toLowerCase() : "";
+                return productName.contains(lower) || categoryName.contains(lower);
+            });
+        });
+
+        Button addBtn = new Button("Add Stock");
+        Button reduceBtn = new Button("Reduce Stock");
+
+        addBtn.getStyleClass().add("inventory-button");
+        reduceBtn.getStyleClass().add("inventory-button");
+
+        HBox actionButtons = new HBox(20, addBtn, reduceBtn);
+        actionButtons.setAlignment(Pos.CENTER);
+        actionButtons.setPadding(new Insets(20, 0, 0, 0));
+
+        VBox content = new VBox(20, title, searchField, table, actionButtons);
+        content.setAlignment(Pos.TOP_CENTER);
+        content.setPadding(new Insets(30));
+        content.setStyle("-fx-background-color: #1e1e1e;");
+
+        StackPane root = new StackPane(content);
+
+        addBtn.setOnAction(e -> {
+            Product selected = table.getSelectionModel().getSelectedItem();
+            if (selected != null) {
+                TransactionDialog.show("add", selected, () -> {
+                    // Refresh from DB
+                    List<Product> refreshed = dao.getAllWithCategory();                    if (showOnlyOutOfStock) {
+                        refreshed.removeIf(p -> p.getStock() > 0);
+                    }
+
+                    products.setAll(refreshed);
+                    filteredList.setPredicate(filteredList.getPredicate());
+                    table.refresh();
+                });
+            } else {
+                PopUpDialog.showError("Please select a product to add stock.");
+            }
+        });
+
+        reduceBtn.setOnAction(e -> {
+            Product selected = table.getSelectionModel().getSelectedItem();
+            if (selected != null) {
+                TransactionDialog.show("reduce", selected, () -> {
+                    // Refresh from DB
+                    List<Product> refreshed = dao.getAllWithCategory();                    if (showOnlyOutOfStock) {
+                        refreshed.removeIf(p -> p.getStock() > 0);
+                    }
+
+                    products.setAll(refreshed);
+                    filteredList.setPredicate(filteredList.getPredicate());
+                    table.refresh();
+                });
+            } else {
+                PopUpDialog.showError("Please select a product to reduce stock.");
+            }
+        });
+
+        return root;
+    }
+}
