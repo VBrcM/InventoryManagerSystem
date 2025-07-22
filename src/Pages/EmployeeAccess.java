@@ -1,7 +1,7 @@
 package Pages;
 
-import Pages.Layouts.AccessLayout;
-import javafx.application.Platform;
+
+import Pages.Layouts.*;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -10,108 +10,154 @@ import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
 public class EmployeeAccess {
+    private static BorderPane layout;
+    private static Stage currentStage;
 
     public static void show(Stage stage) {
-        // ===== Navigation Bar (Left Side) =====
+        currentStage = stage;
+        layout = new BorderPane();
+
+        // Setup navigation and initial view
+        setupNavBar();
+        showDashboard();
+
+        // Apply to stage
+        StackPane root = (StackPane) stage.getScene().getRoot();
+        root.getChildren().setAll(layout);
+    }
+
+    private static void setupNavBar() {
         VBox navBar = new VBox(20);
         navBar.getStyleClass().add("navbar");
         navBar.setAlignment(Pos.TOP_CENTER);
         navBar.setPadding(new Insets(10, 20, 10, 20));
-        navBar.setMaxHeight(Double.MAX_VALUE);
-        VBox.setVgrow(navBar, Priority.ALWAYS);
 
-        // ===== Title (Inventory Manager) =====
-        Label title1 = new Label("Inventory");
-        Label title2 = new Label("Manager");
+        // Title
+        Label title1 = new Label("Employee");
+        Label title2 = new Label("Portal");
         title1.getStyleClass().add("navbar-title-line");
         title2.getStyleClass().add("navbar-title-line");
         VBox titleBox = new VBox(title1, title2);
         titleBox.setAlignment(Pos.CENTER);
-        titleBox.setSpacing(0);
 
-        // ===== Navigation Buttons =====
-        Button dashboardBtn = makeNavButton("Dashboard", "📊");
-        Button transactionBtn = makeNavButton("Transaction", "📦");
-        Button transRecordsBtn = makeNavButton("Transaction Records", "📈");
-        Button logoutBtn = makeNavButton("Logout", "🔒");
-        Button exitBtn = makeNavButton("Exit", "🚪");
+        // Navigation Buttons
+        Button dashboardBtn = createNavButton("Dashboard", "📊", () -> showDashboard());
+        Button salesBtn = createNavButton("New Sale", "💰", () -> showSales());
+        Button inventoryBtn = createNavButton("Inventory", "📦", () -> showInventory());
+        Button transactionsBtn = createNavButton("Transactions", "📈", () -> showTransactions());
+        Button logoutBtn = createNavButton("Logout", "🔒", () -> AccessLayout.show());
+        Button exitBtn = createNavButton("Exit", "🚪", () -> System.exit(0));
 
-        // ===== Grouping Top and Bottom Buttons =====
-        VBox topButtonBox = new VBox(15, wrap(dashboardBtn), wrap(transactionBtn), wrap(transRecordsBtn));
-        topButtonBox.setAlignment(Pos.TOP_CENTER);
+        // Layout
+        VBox topButtons = new VBox(15,
+                wrap(dashboardBtn),
+                wrap(salesBtn),
+                wrap(inventoryBtn),
+                wrap(transactionsBtn)
+        );
 
-        VBox bottomButtonBox = new VBox(15, wrap(logoutBtn), wrap(exitBtn));
-        bottomButtonBox.setAlignment(Pos.BOTTOM_CENTER);
+        VBox bottomButtons = new VBox(15,
+                wrap(logoutBtn),
+                wrap(exitBtn)
+        );
 
-        // ===== Spacer Between Top and Bottom Buttons =====
         Region spacer = new Region();
         VBox.setVgrow(spacer, Priority.ALWAYS);
 
-        // ===== Add All Components to Navigation Bar =====
-        navBar.getChildren().addAll(titleBox, topButtonBox, spacer, bottomButtonBox);
-
-        // ===== Main Layout =====
-        BorderPane layout = new BorderPane();
+        navBar.getChildren().addAll(titleBox, topButtons, spacer, bottomButtons);
         layout.setLeft(navBar);
-        layout.setCenter(buildReports()); // Default view
-        layout.setPrefSize(Double.MAX_VALUE, Double.MAX_VALUE);
-        BorderPane.setAlignment(navBar, Pos.TOP_LEFT);
-
-        // ===== Responsive Navbar Width (16% of screen width) =====
-        layout.widthProperty().addListener((obs, oldVal, newVal) -> {
-            navBar.setPrefWidth(newVal.doubleValue() * 0.16);
-        });
-
-        // ===== Set Layout in Root StackPane =====
-        StackPane.setAlignment(layout, Pos.CENTER);
-        StackPane.setMargin(layout, Insets.EMPTY);
-        AccessPage.root.getChildren().setAll(layout);
-
-        // ===== Button Actions =====
-        dashboardBtn.setOnAction(e -> layout.setCenter(buildReports()));
-        transactionBtn.setOnAction(e -> layout.setCenter(buildReports()));
-        transRecordsBtn.setOnAction(e -> layout.setCenter(buildReports()));
-        logoutBtn.setOnAction(e -> AccessLayout.show());
-        exitBtn.setOnAction(e -> Platform.exit());
     }
 
-    // ===== Helper to Create a Styled Navigation Button =====
-    private static Button makeNavButton(String text, String icon) {
+    // View Controllers
+    private static void showDashboard() {
+        VBox dashboard = EmployeeDashboardLayout.build();
+        layout.setCenter(dashboard);
+        loadDashboardData(dashboard);
+    }
+
+    private static void showSales() {
+        layout.setCenter(EmployeeSalesLayout.build(layout));
+    }
+
+    private static void showInventory() {
+        layout.setCenter(EmployeeInventoryLayout.build());
+    }
+
+    private static void showTransactions() {
+        layout.setCenter(EmployeeTransactionsLayout.build());
+    }
+
+    // Data Loading
+    private static void loadDashboardData(VBox dashboard) {
+        try {
+            HBox statsRow = (HBox) dashboard.getChildren().get(2);
+            VBox salesBox = (VBox) statsRow.getChildren().get(0);
+            VBox transactionsBox = (VBox) statsRow.getChildren().get(1);
+            VBox popularItemBox = (VBox) statsRow.getChildren().get(2);
+            VBox lowStockBox = (VBox) statsRow.getChildren().get(3);
+            VBox transactionsList = (VBox) dashboard.lookup("#transactionsList");
+
+            // Mock data - replace with database calls
+            ((Label) salesBox.getChildren().get(0)).setText("₱1,245.50");
+            ((Label) transactionsBox.getChildren().get(0)).setText("18");
+            ((Label) popularItemBox.getChildren().get(0)).setText("Blue Pens");
+            ((Label) lowStockBox.getChildren().get(0)).setText("2 items");
+
+            if (transactionsList != null) {
+                transactionsList.getChildren().clear();
+                addTransactionItem(transactionsList, "09:30 AM", "₱250.00", "Notebook (2), Pens (3)");
+                addTransactionItem(transactionsList, "10:45 AM", "₱180.50", "Binder (1), Paper (5)");
+                addTransactionItem(transactionsList, "11:15 AM", "₱75.25", "Pencils (10), Erasers (2)");
+            }
+        } catch (Exception e) {
+            System.err.println("Error loading dashboard data: " + e.getMessage());
+        }
+    }
+
+    // UI Components
+    private static Button createNavButton(String text, String icon, Runnable action) {
         Button btn = new Button(icon + "  " + text);
         btn.getStyleClass().add("nav-button");
         btn.setPrefHeight(50);
         btn.setPrefWidth(280);
+        btn.setOnAction(e -> action.run());
         return btn;
     }
 
-    // ===== Wrap Button in Centered HBox for Alignment =====
     private static HBox wrap(Button button) {
         HBox wrapper = new HBox(button);
         wrapper.setAlignment(Pos.CENTER);
         return wrapper;
     }
 
-    // ===== Placeholder Inventory Page (Unused) =====
-    private static VBox buildInventory() {
-        Label title = new Label("Inventory Management (Placeholder)");
-        title.setId("title-label");
+    private static void addTransactionItem(VBox container, String time, String amount, String items) {
+        HBox item = new HBox(15);
+        item.setAlignment(Pos.CENTER_LEFT);
+        item.setPadding(new Insets(12, 15, 12, 15));
+        item.setStyle("-fx-background-color: #2e2e2e; -fx-background-radius: 8;");
 
-        VBox box = new VBox(title);
-        box.setAlignment(Pos.CENTER);
-        box.getStyleClass().add("dashboard");
-        VBox.setVgrow(box, Priority.ALWAYS);
-        return box;
+        Label timeLabel = new Label(time);
+        timeLabel.setStyle("-fx-font-weight: bold; -fx-min-width: 100;");
+
+        Label amountLabel = new Label(amount);
+        amountLabel.setStyle("-fx-text-fill: #4CAF50; -fx-font-weight: bold; -fx-min-width: 100;");
+
+        Label itemsLabel = new Label(items);
+        itemsLabel.setStyle("-fx-text-fill: #aaaaaa;");
+        itemsLabel.setWrapText(true);
+        HBox.setHgrow(itemsLabel, Priority.ALWAYS);
+
+        item.getChildren().addAll(timeLabel, amountLabel, itemsLabel);
+        container.getChildren().add(item);
     }
 
-    // ===== Placeholder Reports Page =====
-    private static VBox buildReports() {
-        Label title = new Label("Section (Placeholder)");
-        title.setId("title-label");
-
-        VBox box = new VBox(title);
-        box.setAlignment(Pos.CENTER);
-        box.getStyleClass().add("dashboard");
-        VBox.setVgrow(box, Priority.ALWAYS);
-        return box;
+    // Helper for quick actions in dashboard
+    public static void navigateTo(String view) {
+        switch (view) {
+            case "sales": showSales(); break;
+            case "inventory": showInventory(); break;
+            case "transactions": showTransactions(); break;
+            default: showDashboard();
+        }
     }
 }
