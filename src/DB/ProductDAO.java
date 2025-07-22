@@ -60,6 +60,28 @@ public class ProductDAO {
         }
     }
 
+    public static void reduceStock(int productId, int qty) throws SQLException {
+        String sql = "UPDATE Product SET stock = stock - ? WHERE product_id = ? AND stock >= ?";
+        try (Connection conn = JDBC.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, qty);
+            stmt.setInt(2, productId);
+            stmt.setInt(3, qty);
+            int rows = stmt.executeUpdate();
+            if (rows == 0) throw new SQLException("Not enough stock.");
+        }
+    }
+
+    public static void addStock(int productId, int qty) throws SQLException {
+        String sql = "UPDATE Product SET stock = stock + ? WHERE product.product_id = ?";
+        try (Connection conn = JDBC.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, qty);
+            stmt.setInt(2, productId);
+            stmt.executeUpdate();
+        }
+    }
+
     // Retrieves all products with their category names
     public List<Product> getAllWithCategory() {
         List<Product> list = new ArrayList<>();

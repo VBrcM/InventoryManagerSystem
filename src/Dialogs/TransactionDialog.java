@@ -8,10 +8,11 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 
 import java.sql.SQLException;
+import java.util.function.Consumer;
 
 public class TransactionDialog {
 
-    public static void show(String type, Product selectedProduct, Runnable onSaved) {
+    public static void show(String type, Product selectedProduct, Consumer<Integer> onSaved) {
         StackPane root = AccessPage.root;
 
         // Create overlay to dim background
@@ -88,7 +89,7 @@ public class TransactionDialog {
 
                 if (success) {
                     PopUpDialog.showInfo("Transaction recorded successfully.");
-                    onSaved.run(); // refresh table
+                    onSaved.accept(quantity);
                     root.getChildren().remove(overlay);
                 } else {
                     PopUpDialog.showError("Transaction failed.");

@@ -23,10 +23,28 @@ public class EmployeeTransactionLayout {
         Label title = new Label("Product Stock Transaction");
         title.setId("title-label");
 
+        // Search bar
         TextField searchField = new TextField();
         searchField.setPromptText("Search product...");
         searchField.getStyleClass().add("input-field");
+        searchField.setMaxWidth(200);
 
+        // Category filter
+        ComboBox<String> categoryFilter = new ComboBox<>();
+        categoryFilter.getItems().add("All Categories");
+        categoryFilter.getItems().addAll(new CategoryDAO().getAllCategoryNames());
+        categoryFilter.setValue("All Categories");
+        categoryFilter.getStyleClass().add("inventory-button");
+
+        // Spacer for alignment
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        // Top bar: search left, category filter right
+        HBox topBar = new HBox(10, searchField, spacer, categoryFilter);
+        topBar.setAlignment(Pos.CENTER_LEFT);
+
+        // Table setup
         TableView<Product> table = new TableView<>();
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         table.getStyleClass().add("table-view");
@@ -46,6 +64,7 @@ public class EmployeeTransactionLayout {
         table.getColumns().addAll(nameCol, categoryCol, priceCol, stockCol);
         VBox.setVgrow(table, Priority.ALWAYS);
 
+        // Product data
         ProductDAO dao = new ProductDAO();
         List<Product> productList = dao.getAllWithCategory();
 
@@ -57,15 +76,25 @@ public class EmployeeTransactionLayout {
         FilteredList<Product> filteredList = new FilteredList<>(products, p -> true);
         table.setItems(filteredList);
 
-        searchField.textProperty().addListener((obs, oldVal, newVal) -> {
-            String lower = newVal.toLowerCase();
-            filteredList.setPredicate(p -> {
-                String productName = p.getProduct() != null ? p.getProduct().toLowerCase() : "";
-                String categoryName = p.getCategoryName() != null ? p.getCategoryName().toLowerCase() : "";
-                return productName.contains(lower) || categoryName.contains(lower);
-            });
-        });
+        // Filter logic (search + category)
+        Runnable applyFilters = () -> {
+            String keyword = searchField.getText().toLowerCase();
+            String selectedCategory = categoryFilter.getValue();
 
+            filteredList.setPredicate(p -> {
+                String name = p.getProduct() != null ? p.getProduct().toLowerCase() : "";
+                String category = p.getCategoryName() != null ? p.getCategoryName().toLowerCase() : "";
+                boolean matchesSearch = name.contains(keyword) || category.contains(keyword);
+                boolean matchesCategory = selectedCategory.equals("All Categories") ||
+                        category.equalsIgnoreCase(selectedCategory);
+                return matchesSearch && matchesCategory;
+            });
+        };
+
+        searchField.textProperty().addListener((obs, oldVal, newVal) -> applyFilters.run());
+        categoryFilter.setOnAction(e -> applyFilters.run());
+
+        // Action buttons
         Button addBtn = new Button("Add Stock");
         Button reduceBtn = new Button("Reduce Stock");
 
@@ -76,25 +105,30 @@ public class EmployeeTransactionLayout {
         actionButtons.setAlignment(Pos.CENTER);
         actionButtons.setPadding(new Insets(20, 0, 0, 0));
 
-        VBox content = new VBox(20, title, searchField, table, actionButtons);
+        VBox content = new VBox(20, title, topBar, table, actionButtons);
         content.setAlignment(Pos.TOP_CENTER);
         content.setPadding(new Insets(30));
         content.setStyle("-fx-background-color: #1e1e1e;");
 
         StackPane root = new StackPane(content);
 
+        // Button handlers
         addBtn.setOnAction(e -> {
             Product selected = table.getSelectionModel().getSelectedItem();
             if (selected != null) {
-                TransactionDialog.show("add", selected, () -> {
-                    // Refresh from DB
-                    List<Product> refreshed = dao.getAllWithCategory();                    if (showOnlyOutOfStock) {
-                        refreshed.removeIf(p -> p.getStock() > 0);
+                TransactionDialog.show("add", selected, (qty)-> {
+                    try {
+                        List<Product> refreshed = dao.getAllWithCategory();
+                        if (showOnlyOutOfStock) {
+                            refreshed.removeIf(p -> p.getStock() > 0);
+                        }
+                        products.setAll(refreshed);
+                        filteredList.setPredicate(filteredList.getPredicate());
+                        table.refresh();
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                        PopUpDialog.showError("Failed to refresh inventory.");
                     }
-
-                    products.setAll(refreshed);
-                    filteredList.setPredicate(filteredList.getPredicate());
-                    table.refresh();
                 });
             } else {
                 PopUpDialog.showError("Please select a product to add stock.");
@@ -104,15 +138,19 @@ public class EmployeeTransactionLayout {
         reduceBtn.setOnAction(e -> {
             Product selected = table.getSelectionModel().getSelectedItem();
             if (selected != null) {
-                TransactionDialog.show("reduce", selected, () -> {
-                    // Refresh from DB
-                    List<Product> refreshed = dao.getAllWithCategory();                    if (showOnlyOutOfStock) {
-                        refreshed.removeIf(p -> p.getStock() > 0);
+                TransactionDialog.show("reduce", selected, (qty) -> {
+                    try {
+                        List<Product> refreshed = dao.getAllWithCategory();
+                        if (showOnlyOutOfStock) {
+                            refreshed.removeIf(p -> p.getStock() > 0);
+                        }
+                        products.setAll(refreshed);
+                        filteredList.setPredicate(filteredList.getPredicate());
+                        table.refresh();
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                        PopUpDialog.showError("Failed to refresh inventory.");
                     }
-
-                    products.setAll(refreshed);
-                    filteredList.setPredicate(filteredList.getPredicate());
-                    table.refresh();
                 });
             } else {
                 PopUpDialog.showError("Please select a product to reduce stock.");

@@ -7,20 +7,37 @@ import java.util.List;
 
 public class SaleItemDAO {
 
-    // Inserts a new sale item record into the Sale_item table
-    public void insert(SaleItem si) throws SQLException {
+    // Full object insert
+    public static void insert(SaleItem si) throws SQLException {
         String sql = "INSERT INTO Sale_item (sale_id, product_id, si_date, si_qty, si_price) VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = JDBC.connect();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-
             stmt.setInt(1, si.getSaleId());
             stmt.setInt(2, si.getProductId());
             stmt.setString(3, si.getSiDate());
             stmt.setInt(4, si.getQuantity());
             stmt.setDouble(5, si.getPrice());
+            stmt.executeUpdate();
+        }
+    }
 
-            int rows = stmt.executeUpdate();
-            System.out.println("Insert SaleItem: rows affected = " + rows);
+    // Convenience insert (uses product's price automatically)
+    public static void insert(int saleId, int productId, int qty) throws SQLException {
+        String sql = """
+        INSERT INTO Sale_item (sale_id, product_id, si_date, si_qty, si_price)
+        VALUES (?, ?, ?, ?, (SELECT p_price FROM product WHERE product_id = ?))
+    """;
+
+        try (Connection conn = JDBC.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, saleId);
+            stmt.setInt(2, productId);
+            stmt.setDate(3, Date.valueOf(LocalDate.now()));
+            stmt.setInt(4, qty);
+            stmt.setInt(5, productId);  // correct price fetch from Product using p_id
+
+            stmt.executeUpdate();
         }
     }
 
