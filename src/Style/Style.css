@@ -29,7 +29,7 @@
     -fx-font-weight: bold;
     -fx-text-fill: white;
     -fx-text-alignment: center;
-    -fx-padding: 0 0 20 0;
+    -fx-padding: 0 0 0 0;
     -fx-alignment: center;
 }
 
@@ -208,6 +208,51 @@
     -fx-pref-height: 90px;
     -fx-alignment: center-left;
     -fx-spacing: 10;
+}
+
+.desc-pane {
+    -fx-background-color: #2e2e2e;
+    -fx-text-fill: white;
+    -fx-border-width: 0;
+}
+
+.desc-pane .header-panel,
+.desc-pane .content,
+.desc-pane .button-bar {
+    -fx-background-color: #2e2e2e;
+    -fx-text-fill: white;
+    -fx-border-width: 0;
+}
+
+.desc-pane .label {
+    -fx-text-fill: white;
+}
+
+.desc-pane .text-field,
+.desc-pane .text-area {
+    -fx-background-color: #3a3a3a;
+    -fx-text-fill: white;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-background-radius: 4;
+    -fx-padding: 6;
+}
+
+.desc-pane .text-area .content {
+    -fx-background-color: #3a3a3a;
+    -fx-border-width: 0;
+}
+
+.desc-pane .button {
+    -fx-background-color: #444;
+    -fx-text-fill: white;
+    -fx-background-radius: 4;
+    -fx-border-width: 0;
+    -fx-padding: 6 12;
+}
+
+.desc-pane .button:hover {
+    -fx-background-color: #555;
 }
 
 /* Charts */

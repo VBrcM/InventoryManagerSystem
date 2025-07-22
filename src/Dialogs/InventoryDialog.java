@@ -63,7 +63,7 @@ public class InventoryDialog {
         descriptionField.setPromptText("Description");
         descriptionField.setPrefSize(400, 108);
         descriptionField.setWrapText(true);
-        descriptionField.getStyleClass().add("dialog-pane");
+        descriptionField.getStyleClass().add("desc-pane");
 
         // If editing, populate the fields with the existing product's values
         if (productToEdit != null) {

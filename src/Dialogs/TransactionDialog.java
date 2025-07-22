@@ -6,8 +6,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-
-import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.function.Consumer;
 
 public class TransactionDialog {
@@ -37,7 +36,7 @@ public class TransactionDialog {
         Label nameLabel = new Label("Product: " + selectedProduct.getProduct());
         Label categoryLabel = new Label("Category: " + selectedProduct.getCategoryName());
         Label currentStockLabel = new Label("Current Stock: " + selectedProduct.getStock());
-        Label priceLabel = new Label("Unit Price: ₱" + String.format("%.2f", selectedProduct.getPrice()));
+        Label priceLabel = new Label("Unit Price: " + Formatter.formatCurrency(selectedProduct.getPrice()));
 
         String nameStyle = "-fx-font-size: 16px; -fx-text-fill: white; -fx-font-weight: bold";
         String infoStyle = "-fx-font-size: 14px; -fx-text-fill: white;";
@@ -73,29 +72,49 @@ public class TransactionDialog {
 
             int quantity = Integer.parseInt(qtyText);
 
+            // Prevent reducing more than stock
             if (type.equals("reduce") && quantity > selectedProduct.getStock()) {
                 PopUpDialog.showError("Cannot reduce more than available stock.");
                 return;
             }
 
             try {
-                System.out.println("[DEBUG] Transaction type passed in: " + type);
+                // Step 1: Record Transaction
                 Transaction txn = new Transaction();
-                txn.setType(type.toUpperCase()); // ✅ FIXED: convert to uppercase
+                txn.setType(type.toUpperCase());
                 txn.setProductId(selectedProduct.getProductId());
                 txn.setQuantity(quantity);
 
-                boolean success = TransactionDAO.recordTransaction(txn);
-
-                if (success) {
-                    PopUpDialog.showInfo("Transaction recorded successfully.");
-                    onSaved.accept(quantity);
-                    root.getChildren().remove(overlay);
-                } else {
+                boolean txnSuccess = TransactionDAO.recordTransaction(txn);
+                if (!txnSuccess) {
                     PopUpDialog.showError("Transaction failed.");
+                    return;
                 }
 
-            } catch (SQLException ex) {
+                // Step 2: Record Sale and Sale Item if reducing stock
+                if (type.equals("reduce")) {
+                    int saleId = SaleDAO.insert(quantity, selectedProduct.getPrice() * quantity);
+
+                    SaleItem item = new SaleItem();
+                    item.setSaleId(saleId);
+                    item.setProductId(selectedProduct.getProductId());
+                    item.setQuantity(quantity);
+                    item.setPrice(selectedProduct.getPrice());
+                    item.setSiDate(LocalDate.now().toString());
+
+                    boolean itemSuccess = SaleItemDAO.insertSaleItem(item);
+                    if (!itemSuccess) {
+                        PopUpDialog.showError("Sale recorded but failed to add sale item.");
+                        return;
+                    }
+                }
+
+                // Success
+                PopUpDialog.showInfo("Transaction recorded successfully.");
+                onSaved.accept(quantity);
+                root.getChildren().remove(overlay);
+
+            } catch (Exception ex) {
                 ex.printStackTrace();
                 PopUpDialog.showError("A database error occurred: " + ex.getMessage());
             }

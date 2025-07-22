@@ -55,11 +55,33 @@ public class EmployeeTransactionLayout {
         TableColumn<Product, String> categoryCol = new TableColumn<>("Category");
         categoryCol.setCellValueFactory(new PropertyValueFactory<>("categoryName"));
 
+        TableColumn<Product, Integer> stockCol = new TableColumn<>("Quantity");
+        stockCol.setCellValueFactory(new PropertyValueFactory<>("stock"));
+        stockCol.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(Integer item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(String.format("%,d", item));
+                }
+            }
+        });
+
         TableColumn<Product, Double> priceCol = new TableColumn<>("Price");
         priceCol.setCellValueFactory(new PropertyValueFactory<>("price"));
-
-        TableColumn<Product, Integer> stockCol = new TableColumn<>("Stock");
-        stockCol.setCellValueFactory(new PropertyValueFactory<>("stock"));
+        priceCol.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(Double item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(Formatter.formatCurrency(item));
+                }
+            }
+        });
 
         table.getColumns().addAll(nameCol, categoryCol, priceCol, stockCol);
         VBox.setVgrow(table, Priority.ALWAYS);

@@ -1,7 +1,6 @@
 package Pages.Layouts;
 
-import DB.SaleItem;
-import DB.SaleItemDAO;
+import DB.*;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -33,11 +32,54 @@ public class AdminReportDetailsLayout {
 
         TableColumn<SaleItem, Integer> quantityCol = new TableColumn<>("Quantity");
         quantityCol.setCellValueFactory(new PropertyValueFactory<>("quantity"));
+        quantityCol.setCellFactory(col -> new TableCell<SaleItem, Integer>() {
+            @Override
+            protected void updateItem(Integer value, boolean empty) {
+                super.updateItem(value, empty);
+                if (empty || value == null) {
+                    setText(null);
+                } else {
+                    setText(Formatter.formatNumber(value));
+                }
+            }
+        });
+
 
         TableColumn<SaleItem, Double> priceCol = new TableColumn<>("Price");
         priceCol.setCellValueFactory(new PropertyValueFactory<>("price"));
+        priceCol.setCellFactory(col -> new TableCell<SaleItem, Double>() {
+            @Override
+            protected void updateItem(Double value, boolean empty) {
+                super.updateItem(value, empty);
+                if (empty || value == null) {
+                    setText(null);
+                } else {
+                    setText(Formatter.formatCurrency(value));
+                }
+            }
+        });
 
-        table.getColumns().addAll(nameCol, categoryCol, quantityCol, priceCol);
+// ✅ Total Price column
+        TableColumn<SaleItem, Double> totalCol = new TableColumn<>("Total Price");
+        totalCol.setCellValueFactory(cellData -> {
+            SaleItem item = cellData.getValue();
+            double total = item.getQuantity() * item.getPrice();
+            return new javafx.beans.property.SimpleDoubleProperty(total).asObject();
+        });
+
+        totalCol.setCellFactory(col -> new TableCell<SaleItem, Double>() {
+            @Override
+            protected void updateItem(Double value, boolean empty) {
+                super.updateItem(value, empty);
+                if (empty || value == null) {
+                    setText(null);
+                } else {
+                    setText(Formatter.formatCurrency(value));
+                }
+            }
+        });
+
+        table.getColumns().addAll(nameCol, categoryCol, quantityCol, priceCol, totalCol);
 
         List<SaleItem> items = SaleItemDAO.getSaleItemsByDate(date);
         for (SaleItem s : items) {

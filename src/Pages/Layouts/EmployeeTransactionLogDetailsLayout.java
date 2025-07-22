@@ -33,9 +33,21 @@ public class EmployeeTransactionLogDetailsLayout {
         TableColumn<Transaction, Integer> qtyCol = new TableColumn<>("Quantity");
         qtyCol.setCellValueFactory(new PropertyValueFactory<>("quantity"));
 
-        TableColumn<Transaction, String> timeCol = new TableColumn<>("Date & Time");
+        qtyCol.setCellFactory(col -> new TableCell<Transaction, Integer>() {
+            @Override
+            protected void updateItem(Integer value, boolean empty) {
+                super.updateItem(value, empty);
+                if (empty || value == null) {
+                    setText(null);
+                } else {
+                    setText(Formatter.formatNumber(value));
+                }
+            }
+        });
+
+        TableColumn<Transaction, String> timeCol = new TableColumn<>("Time");
         timeCol.setCellValueFactory(cellData -> new SimpleStringProperty(
-                Formatter.formatDateTime(cellData.getValue().getTransDate().toLocalDateTime())
+                Formatter.formatTime(cellData.getValue().getTransDate().toLocalDateTime())
         ));
 
         table.getColumns().addAll(productCol, typeCol, qtyCol, timeCol);

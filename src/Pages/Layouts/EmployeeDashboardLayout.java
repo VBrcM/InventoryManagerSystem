@@ -1,7 +1,7 @@
 package Pages.Layouts;
 
 import DB.*;
-import javafx.application.Platform;
+import DB.Formatter;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -29,9 +29,23 @@ public class EmployeeDashboardLayout {
         title.setPadding(new Insets(10, 0, 10, 0));
 
         System.out.println("[DEBUG] Fetching stats for stat boxes...");
-        VBox totalProducts = createStatBox("Total Products", String.valueOf(ProductDAO.getTotalProducts()), () -> layout.setCenter(EmployeeTransactionLayout.build()));
-        VBox totalTransactionsToday = createStatBox("Total Transactions Today", String.valueOf(new TransactionDAO().getToday()), null);
-        VBox outOfStock = createStatBox("Out of Stock", String.valueOf(ProductDAO.getOutOfStockCount()), () -> layout.setCenter(EmployeeTransactionLayout.build(true)));
+        VBox totalProducts = createStatBox(
+                "Total Products",
+                Formatter.formatNumber(ProductDAO.getTotalProducts()),
+                () -> layout.setCenter(EmployeeTransactionLayout.build())
+        );
+
+        VBox totalTransactionsToday = createStatBox(
+                "Total Transactions Today",
+                Formatter.formatNumber(new TransactionDAO().getToday()),
+                null
+        );
+
+        VBox outOfStock = createStatBox(
+                "Out of Stock",
+                Formatter.formatNumber(ProductDAO.getOutOfStockCount()),
+                () -> layout.setCenter(EmployeeTransactionLayout.build(true))
+        );
 
         HBox row1 = new HBox(20, totalProducts, totalTransactionsToday, outOfStock);
         row1.setAlignment(Pos.CENTER);
@@ -42,9 +56,17 @@ public class EmployeeDashboardLayout {
         HBox.setHgrow(outOfStock, Priority.ALWAYS);
 
         System.out.println("[DEBUG] Fetching today’s items added/reduced...");
-        VBox itemsAddedToday = createStatBox("Total Items Added Today", String.valueOf(ProductDAO.getTotalItemsAddedToday()), null);
-        VBox itemsReducedToday = createStatBox("Total Items Reduced Today", String.valueOf(ProductDAO.getTotalItemsReducedToday()), null);
+        VBox itemsAddedToday = createStatBox(
+                "Total Items Added Today",
+                Formatter.formatNumber(ProductDAO.getTotalItemsAddedToday()),
+                null
+        );
 
+        VBox itemsReducedToday = createStatBox(
+                "Total Items Reduced Today",
+                Formatter.formatNumber(ProductDAO.getTotalItemsReducedToday()),
+                null
+        );
         HBox row2 = new HBox(20, itemsAddedToday, itemsReducedToday);
         row2.setAlignment(Pos.CENTER);
         row2.setPadding(new Insets(0, 20, 20, 20));

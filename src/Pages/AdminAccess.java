@@ -27,7 +27,7 @@ public class AdminAccess {
         title2.getStyleClass().add("navbar-title-line");
         VBox titleBox = new VBox(title1, title2);
         titleBox.setAlignment(Pos.CENTER);
-        titleBox.setSpacing(0);
+        titleBox.setSpacing(4);
 
         // ===== Navigation Buttons =====
         Button dashboardBtn = makeNavButton("Dashboard", "📊");

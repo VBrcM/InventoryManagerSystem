@@ -23,11 +23,23 @@ public class AdminDashboardLayout {
         title.setPadding(new Insets(10, 0, 10, 0));
 
         // ===== Stat Boxes =====
-        VBox totalItems = createStatBox("Total Items", String.valueOf(ProductDAO.getTotalProducts()),  () -> layout.setCenter(AdminInventoryLayout.build(false)));
-        VBox totalStock = createStatBox("Total Stock Value", Formatter.formatCurrency(ProductDAO.getTotalStockValue()), null);
+        VBox totalItems = createStatBox(
+                "Total Items",
+                Formatter.formatNumber(ProductDAO.getTotalProducts()),
+                () -> layout.setCenter(AdminInventoryLayout.build(false))
+        );
 
-        // Out of stock stat box redirects to filtered inventory view when clicked
-        VBox outOfStock = createStatBox("Out of Stock", String.valueOf(ProductDAO.getOutOfStockCount()), () -> layout.setCenter(AdminInventoryLayout.build(true)));
+        VBox totalStock = createStatBox(
+                "Total Stock Value",
+                Formatter.formatCurrency(ProductDAO.getTotalStockValue()),
+                null
+        );
+
+        VBox outOfStock = createStatBox(
+                "Out of Stock",
+                Formatter.formatNumber(ProductDAO.getOutOfStockCount()),
+                () -> layout.setCenter(AdminInventoryLayout.build(true))
+        );
 
         // Horizontal container for all stat boxes
         HBox statsRow = new HBox(20, totalItems, totalStock, outOfStock);

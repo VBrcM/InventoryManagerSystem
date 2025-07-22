@@ -9,8 +9,6 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
-import javax.print.attribute.standard.PagesPerMinute;
-
 public class EmployeeAccess {
 
     public static void show(Stage stage) {
@@ -29,7 +27,7 @@ public class EmployeeAccess {
         title2.getStyleClass().add("navbar-title-line");
         VBox titleBox = new VBox(title1, title2);
         titleBox.setAlignment(Pos.CENTER);
-        titleBox.setSpacing(0);
+        titleBox.setSpacing(4);
 
         // ===== Navigation Buttons =====
         Button dashboardBtn = makeNavButton("Dashboard", "📊");
@@ -91,29 +89,5 @@ public class EmployeeAccess {
         HBox wrapper = new HBox(button);
         wrapper.setAlignment(Pos.CENTER);
         return wrapper;
-    }
-
-    // ===== Placeholder Inventory Page (Unused) =====
-    private static VBox buildInventory() {
-        Label title = new Label("Inventory Management (Placeholder)");
-        title.setId("title-label");
-
-        VBox box = new VBox(title);
-        box.setAlignment(Pos.CENTER);
-        box.getStyleClass().add("dashboard");
-        VBox.setVgrow(box, Priority.ALWAYS);
-        return box;
-    }
-
-    // ===== Placeholder Reports Page =====
-    private static VBox buildReports() {
-        Label title = new Label("Section (Placeholder)");
-        title.setId("title-label");
-
-        VBox box = new VBox(title);
-        box.setAlignment(Pos.CENTER);
-        box.getStyleClass().add("dashboard");
-        VBox.setVgrow(box, Priority.ALWAYS);
-        return box;
     }
 }

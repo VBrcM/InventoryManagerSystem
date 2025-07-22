@@ -41,6 +41,16 @@ public class SaleItemDAO {
         }
     }
 
+    public static boolean insertSaleItem(SaleItem si) {
+        try {
+            insert(si);
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     // Updates an existing sale item record in the Sale_item table
     public void update(SaleItem si) throws SQLException {
         String sql = "UPDATE Sale_item SET sale_id=?, product_id=?, si_date=?, si_qty=?, si_price=? WHERE si_id=?";

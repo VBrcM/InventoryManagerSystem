@@ -38,9 +38,31 @@ public class AdminInventoryLayout {
 
         TableColumn<Product, Integer> quantityCol = new TableColumn<>("Quantity");
         quantityCol.setCellValueFactory(new PropertyValueFactory<>("stock"));
+        quantityCol.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(Integer item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(String.format("%,d", item));
+                }
+            }
+        });
 
         TableColumn<Product, Double> priceCol = new TableColumn<>("Price");
         priceCol.setCellValueFactory(new PropertyValueFactory<>("price"));
+        priceCol.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(Double item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(Formatter.formatCurrency(item));
+                }
+            }
+        });
 
         table.getColumns().addAll(nameCol, categoryCol, quantityCol, priceCol);
         VBox.setVgrow(table, Priority.ALWAYS);
