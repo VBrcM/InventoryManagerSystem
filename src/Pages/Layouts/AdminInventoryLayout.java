@@ -18,31 +18,40 @@ import java.util.List;
 
 public class AdminInventoryLayout {
 
+    /**
+     * Builds the default Inventory page showing all products.
+     */
     public static StackPane build() {
-        return build(false);  // Default view: show all products
+        return build(false);
     }
 
+    /**
+     * Builds the Inventory page with an option to show only out-of-stock items.
+     *
+     * @param showOnlyOutOfStock whether to show only products with 0 stock
+     * @return StackPane containing the full layout
+     */
     public static StackPane build(boolean showOnlyOutOfStock) {
+        // ===== Title =====
         Label title = new Label("Inventory");
         title.setId("title-label");
         title.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: white;");
-        title.setPadding(new Insets(10, 0, 10, 0));
+        title.setPadding(new Insets(10));
         title.setAlignment(Pos.CENTER);
         title.setMaxWidth(Double.MAX_VALUE);
 
+        // ===== Search Field =====
         TextField searchField = new TextField();
         searchField.setPromptText("Search items...");
         searchField.getStyleClass().add("input-field");
 
-        // ProductDAO to fetch data
+        // ===== Category Filter =====
         ProductDAO dao = new ProductDAO();
         List<Product> productList = dao.getAll();
-
         if (showOnlyOutOfStock) {
             productList.removeIf(p -> p.getStock() > 0);
         }
 
-        // Extract unique category names for ComboBox filter
         List<String> categories = productList.stream()
                 .map(Product::getCategoryName)
                 .distinct()
@@ -54,20 +63,16 @@ public class AdminInventoryLayout {
         categoryFilter.getItems().addAll(categories);
         categoryFilter.setValue("All Categories");
         categoryFilter.getStyleClass().add("inventory-button");
-        categoryFilter.setPrefWidth(200);
-        categoryFilter.setPrefHeight(38);
+        categoryFilter.setPrefSize(200, 38);
 
-        // Put searchField and categoryFilter side-by-side
-        HBox filtersBox = new HBox(10);
+        // ===== Filters Layout =====
+        HBox filtersBox = new HBox(10, searchField, categoryFilter);
         filtersBox.setAlignment(Pos.CENTER_LEFT);
         filtersBox.setPadding(new Insets(10, 0, 10, 0));
-
         HBox.setHgrow(searchField, Priority.ALWAYS);
         searchField.setMaxWidth(Double.MAX_VALUE);
 
-
-        filtersBox.getChildren().addAll(searchField, categoryFilter);
-
+        // ===== Table Setup =====
         TableView<Product> table = new TableView<>();
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         table.getStyleClass().add("table-view");
@@ -84,11 +89,7 @@ public class AdminInventoryLayout {
             @Override
             protected void updateItem(Integer item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(String.format("%,d", item));
-                }
+                setText(empty || item == null ? null : String.format("%,d", item));
             }
         });
 
@@ -98,38 +99,31 @@ public class AdminInventoryLayout {
             @Override
             protected void updateItem(Double item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(Formatter.formatCurrency(item));
-                }
+                setText(empty || item == null ? null : Formatter.formatCurrency(item));
             }
         });
 
         table.getColumns().addAll(nameCol, categoryCol, quantityCol, priceCol);
         VBox.setVgrow(table, Priority.ALWAYS);
 
-
+        // ===== Data Binding and Filtering =====
         ObservableList<Product> products = FXCollections.observableArrayList(productList);
         FilteredList<Product> filteredList = new FilteredList<>(products, p -> true);
 
-        // Update filtering predicate based on search text and selected category
         Runnable updateFilter = () -> {
-            String searchText = searchField.getText() == null ? "" : searchField.getText().toLowerCase();
+            String searchText = searchField.getText().toLowerCase();
             String selectedCategory = categoryFilter.getValue();
 
             filteredList.setPredicate(p -> {
-                boolean matchesSearch = p.getProductName() != null && p.getProductName().toLowerCase().contains(searchText)
-                        || p.getCategoryName() != null && p.getCategoryName().toLowerCase().contains(searchText);
-
-                boolean matchesCategory = "All Categories".equals(selectedCategory)
-                        || (p.getCategoryName() != null && p.getCategoryName().equals(selectedCategory));
-
+                boolean matchesSearch = p.getProductName().toLowerCase().contains(searchText) ||
+                        p.getCategoryName().toLowerCase().contains(searchText);
+                boolean matchesCategory = "All Categories".equals(selectedCategory) ||
+                        selectedCategory.equals(p.getCategoryName());
                 return matchesSearch && matchesCategory;
             });
         };
 
-        // Add listeners for both searchField and categoryFilter
+        // Update filter when search or category changes
         searchField.textProperty().addListener((obs, oldVal, newVal) -> updateFilter.run());
         categoryFilter.valueProperty().addListener((obs, oldVal, newVal) -> updateFilter.run());
 
@@ -137,51 +131,46 @@ public class AdminInventoryLayout {
         sortedList.comparatorProperty().bind(table.comparatorProperty());
         table.setItems(sortedList);
 
+        // ===== Action Buttons =====
         Button addBtn = new Button("Add");
         Button editBtn = new Button("Edit");
         Button deleteBtn = new Button("Delete");
 
-        addBtn.getStyleClass().add("inventory-button");
-        editBtn.getStyleClass().add("inventory-button");
-        deleteBtn.getStyleClass().add("inventory-button");
-
-        addBtn.setPrefHeight(60);
-        editBtn.setPrefHeight(60);
-        deleteBtn.setPrefHeight(60);
-
-        addBtn.setPrefWidth(200);
-        editBtn.setPrefWidth(200);
-        deleteBtn.setPrefWidth(200);
+        for (Button btn : List.of(addBtn, editBtn, deleteBtn)) {
+            btn.getStyleClass().add("inventory-button");
+            btn.setPrefSize(200, 60);
+        }
 
         HBox actionButtons = new HBox(20, addBtn, editBtn, deleteBtn);
         actionButtons.setAlignment(Pos.CENTER);
         actionButtons.setPadding(new Insets(20, 0, 0, 0));
 
+        // ===== Content Layout =====
         VBox content = new VBox(10, title, filtersBox, table, actionButtons);
         content.setAlignment(Pos.TOP_CENTER);
-        content.setPadding(new Insets(20, 20, 20, 20));
+        content.setPadding(new Insets(20));
         content.setStyle("-fx-background-color: #1e1e1e;");
 
         StackPane root = new StackPane(content);
 
+        // ===== Button Logic =====
+
+        // Add new product
         addBtn.setOnAction(e -> InventoryDialog.show(null, products, () -> {
             table.refresh();
-            updateFilter.run();  // re-apply filter on refresh
+            updateFilter.run();
         }));
 
+        // Edit selected product
         editBtn.setOnAction(e -> {
-            Product selectedProduct = table.getSelectionModel().getSelectedItem();
-            if (selectedProduct != null) {
-                InventoryDialog.show(selectedProduct, products, () -> {
-                    List<Product> refreshedProducts = dao.getAll();
-
+            Product selected = table.getSelectionModel().getSelectedItem();
+            if (selected != null) {
+                InventoryDialog.show(selected, products, () -> {
+                    List<Product> refreshed = dao.getAll();
                     if (showOnlyOutOfStock) {
-                        refreshedProducts.removeIf(p -> p.getStock() > 0);
+                        refreshed.removeIf(p -> p.getStock() > 0);
                     }
-
-                    products.clear();
-                    products.addAll(refreshedProducts);
-
+                    products.setAll(refreshed);
                     updateFilter.run();
                     table.refresh();
                 });
@@ -190,13 +179,14 @@ public class AdminInventoryLayout {
             }
         });
 
+        // Delete selected product
         deleteBtn.setOnAction(e -> {
-            Product selectedProduct = table.getSelectionModel().getSelectedItem();
-            if (selectedProduct != null) {
+            Product selected = table.getSelectionModel().getSelectedItem();
+            if (selected != null) {
                 PopUpDialog.showConfirmation("Delete Item", "Are you sure you want to delete this item?", () -> {
                     try {
-                        dao.delete(selectedProduct.getProductId());
-                        products.remove(selectedProduct);
+                        dao.delete(selected.getProductId());
+                        products.remove(selected);
                         PopUpDialog.showInfo("Product deleted successfully.");
                     } catch (Exception ex) {
                         ex.printStackTrace();

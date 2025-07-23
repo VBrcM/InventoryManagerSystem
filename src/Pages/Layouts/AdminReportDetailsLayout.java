@@ -14,8 +14,15 @@ import java.util.List;
 
 public class AdminReportDetailsLayout {
 
-    public static VBox build(BorderPane parentLayout, LocalDate date, List<SaleItem> transactions) {
-        // Title
+    /**
+     * Builds the report details page for a specific date.
+     *
+     * @param parentLayout The main layout to return to when "Back" is clicked
+     * @param date         The date of the report
+     * @return VBox containing the report details layout
+     */
+    public static VBox build(BorderPane parentLayout, LocalDate date) {
+        // ===== Title =====
         Label title = new Label("Report Details - " + date.format(DateTimeFormatter.ofPattern("MMMM dd, yyyy")));
         title.setId("title-label");
         title.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: white;");
@@ -23,12 +30,12 @@ public class AdminReportDetailsLayout {
         title.setMaxWidth(Double.MAX_VALUE);
         title.setAlignment(Pos.CENTER_LEFT);
 
-        // Table
+        // ===== Table Setup =====
         TableView<SaleItem> table = new TableView<>();
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         table.getStyleClass().add("table-view");
 
-        // Columns
+        // ===== Table Columns =====
         TableColumn<SaleItem, String> nameCol = new TableColumn<>("Item Name");
         nameCol.setCellValueFactory(new PropertyValueFactory<>("productName"));
 
@@ -71,23 +78,22 @@ public class AdminReportDetailsLayout {
 
         table.getColumns().addAll(nameCol, categoryCol, quantityCol, priceCol, totalCol);
         table.getItems().addAll(SaleItemDAO.getSaleItemsByDate(date));
+        VBox.setVgrow(table, Priority.ALWAYS);
 
-        // Back Button
+        // ===== Back Button =====
         Button backBtn = new Button("Back to Reports");
         backBtn.getStyleClass().add("inventory-button");
-        backBtn.setPrefHeight(50);
-        backBtn.setPrefWidth(200);
+        backBtn.setPrefSize(200, 50);
         backBtn.setOnAction(e -> parentLayout.setCenter(AdminReportsLayout.build(parentLayout)));
 
         HBox buttonBox = new HBox(backBtn);
         buttonBox.setAlignment(Pos.CENTER);
         buttonBox.setPadding(new Insets(10, 0, 0, 0));
 
-        // Final layout
+        // ===== Final Layout =====
         VBox layout = new VBox(20, title, table, buttonBox);
         layout.setPadding(new Insets(30));
         layout.setAlignment(Pos.TOP_CENTER);
-        VBox.setVgrow(table, Priority.ALWAYS);
 
         return layout;
     }

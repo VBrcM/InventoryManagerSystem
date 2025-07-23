@@ -1,5 +1,6 @@
 package Pages.Layouts;
 
+import DB.Formatter;
 import Model.POJO.SaleItem;
 import Model.DAO.SaleItemDAO;
 import javafx.geometry.Insets;
@@ -17,51 +18,48 @@ public class AdminReportsLayout {
     private static int totalDaysLoaded = 0;
     private static final int DAYS_PER_SHOW_MORE = 10;
 
-    // Builds the main layout for displaying sales reports
+    /**
+     * Builds the main layout for displaying daily sales reports.
+     */
     public static VBox build(BorderPane parentLayout) {
         totalDaysLoaded = 0;
 
-        // Title label
+        // ===== Title Label =====
         Label title = new Label("Sales Reports");
         title.setId("title-label");
         title.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: white;");
         title.setPadding(new Insets(10, 0, 10, 0));
 
-        // Dropdown for time range filter (smaller)
+        // ===== Filter Dropdown =====
         ComboBox<String> filterBox = new ComboBox<>();
         filterBox.getItems().addAll("Last 1 month", "Last 2 months", "Last 3 months");
         filterBox.setValue("Last 1 month");
         filterBox.getStyleClass().add("inventory-button");
-        filterBox.setPrefWidth(140);
-        filterBox.setPrefHeight(32);
+        filterBox.setPrefSize(140, 32);
 
-        // Stack title and dropdown vertically
+        // ===== Title + Filter Layout =====
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-
-        filterBox.setPrefWidth(140);
-        filterBox.setPrefHeight(32);
 
         HBox titleSection = new HBox(10, title, spacer, filterBox);
         titleSection.setAlignment(Pos.CENTER_LEFT);
         titleSection.setPadding(new Insets(0, 0, 5, 0));
 
-        // VBox to store each day's report summary
+        // ===== Day Summary Container =====
         VBox dayList = new VBox(15);
         dayList.setPadding(new Insets(10));
         dayList.setAlignment(Pos.TOP_CENTER);
 
-        // Footer box to hold the "Show More" or "No records" message
+        // ===== Footer Box for "Show More" / No Records Message =====
         VBox footerBox = new VBox();
         footerBox.setAlignment(Pos.CENTER);
         dayList.getChildren().add(footerBox);
 
-        // Filter change logic
+        // ===== Filter Change Handler =====
         filterBox.setOnAction(e -> {
-            System.out.println("Filter changed to: " + filterBox.getValue());
+            // System.out.println("Filter changed to: " + filterBox.getValue());
             totalDaysLoaded = 0;
             maxMonths = switch (filterBox.getValue()) {
-                case "Last 1 month" -> 1;
                 case "Last 2 months" -> 2;
                 case "Last 3 months" -> 3;
                 default -> 1;
@@ -71,37 +69,41 @@ public class AdminReportsLayout {
             loadMoreDays(dayList, parentLayout, footerBox, Integer.MAX_VALUE, true);
         });
 
-        // ScrollPane for report content
+        // ===== Scrollable Content Area =====
         ScrollPane scrollPane = new ScrollPane(dayList);
         scrollPane.setFitToWidth(true);
         scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
 
-        // Final root layout
+        // ===== Root Layout =====
         VBox root = new VBox(10, titleSection, scrollPane);
         root.setPadding(new Insets(30));
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
+        // ===== Initial Load =====
         loadMoreDays(dayList, parentLayout, footerBox, Integer.MAX_VALUE, true);
 
         return root;
     }
 
-    // Creates a visual summary card for a specific date with total sales
+    /**
+     * Creates a summary card for a specific day.
+     */
     private static VBox createDaySummary(LocalDate date, DateTimeFormatter formatter, List<SaleItem> transactions, BorderPane layout) {
+        // ===== Date Label =====
         Label dateLabel = new Label("📅 " + date.format(formatter));
         dateLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: white;");
 
+        // ===== Total Sales Calculation =====
         double total = transactions.stream()
                 .mapToDouble(item -> item.getSiQty() * item.getSiPrice())
                 .sum();
-        Label totalLabel = new Label("Total Sales: ₱" + total);
+        Label totalLabel = new Label("Total Sales: " + Formatter.formatCurrency(total));
         totalLabel.setStyle("-fx-text-fill: #cccccc;");
 
-        List<SaleItem> saleItems = SaleItemDAO.getSaleItemsByDate(date);
-
+        // ===== View Button =====
         Button viewBtn = new Button("View Details");
-        viewBtn.setOnAction(e -> layout.setCenter(AdminReportDetailsLayout.build(layout, date, saleItems)));
         viewBtn.getStyleClass().add("inventory-button");
+        viewBtn.setOnAction(e -> layout.setCenter(AdminReportDetailsLayout.build(layout, date)));
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -116,7 +118,9 @@ public class AdminReportsLayout {
         return card;
     }
 
-    // Loads a batch of day summaries
+    /**
+     * Loads a batch of report cards, filtered by month and grouped by date.
+     */
     private static void loadMoreDays(VBox dayList, BorderPane layout, VBox footerBox, int daysToLoad, boolean respectFilterLimit) {
         List<LocalDate> allDates = SaleItemDAO.getAllTransactionDates();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM dd, yyyy");
@@ -128,7 +132,6 @@ public class AdminReportsLayout {
 
         for (int i = totalDaysLoaded; i < allDates.size() && added < daysToLoad; i++) {
             LocalDate date = allDates.get(i);
-
             if (respectFilterLimit && date.isBefore(minDate)) break;
 
             List<SaleItem> transactions = SaleItemDAO.getSaleItemsByDate(date);
@@ -154,7 +157,9 @@ public class AdminReportsLayout {
         }
     }
 
-    // Utility method to refresh the layout
+    /**
+     * Refreshes the report layout.
+     */
     public static void refresh(BorderPane parentLayout) {
         parentLayout.setCenter(build(parentLayout));
     }

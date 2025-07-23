@@ -11,16 +11,25 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.*;
 import DB.*;
 import java.sql.*;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 
+/**
+ * AdminDashboardLayout is responsible for rendering the main admin dashboard interface.
+ * It includes key metrics (stat boxes), bar charts for recent sales, and a pie chart
+ * representing today's sales distribution.
+ */
 public class AdminDashboardLayout {
 
-    // Main builder for the Admin Dashboard layout
+    /**
+     * Builds the complete admin dashboard layout.
+     *
+     * @param layout The main BorderPane layout of the app, used for navigation.
+     * @return A VBox containing the full dashboard interface.
+     */
     public static VBox build(BorderPane layout) {
         ProductDAO productDAO = new ProductDAO();
 
-        // ===== Dashboard Title =====
+        // ===== Title Section =====
         Label title = new Label("Admin Dashboard");
         title.setId("title-label");
         title.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: white;");
@@ -57,45 +66,45 @@ public class AdminDashboardLayout {
         HBox.setHgrow(totalStock, Priority.ALWAYS);
         HBox.setHgrow(outOfStock, Priority.ALWAYS);
 
-        // ===== Charts Section =====
-        VBox chart1Container = new VBox(createChart("Sales This Month"));
-        VBox chart2Container = new VBox(createChart("Sales Last Month"));
-        VBox chart3Container = new VBox(createChart("Most Popular Items"));
+        // ===== Chart Section =====
+        VBox chart1Container = new VBox(createBarChart("Sales This Month"));
+        VBox chart2Container = new VBox(createBarChart("Sales Last Month"));
+        VBox chart3Container = new VBox(createBarChart("Most Popular Items"));
         VBox chart4Container = new VBox(createPieChart());
 
-        chart1Container.getStyleClass().add("chart-container");
-        chart2Container.getStyleClass().add("chart-container");
-        chart3Container.getStyleClass().add("chart-container");
-        chart4Container.getStyleClass().add("chart-container");
+        for (VBox chart : new VBox[]{chart1Container, chart2Container, chart3Container, chart4Container}) {
+            chart.getStyleClass().add("chart-container");
+            chart.setPadding(new Insets(10));
+        }
 
         VBox leftColumn = new VBox(20, chart1Container, chart2Container);
         VBox rightColumn = new VBox(20, chart3Container, chart4Container);
 
-        chart1Container.setPadding(new Insets(10));
-        chart2Container.setPadding(new Insets(10));
-        chart3Container.setPadding(new Insets(10));
-        chart4Container.setPadding(new Insets(10));
-
         HBox chartsRow = new HBox(20, leftColumn, rightColumn);
         chartsRow.setAlignment(Pos.CENTER);
-        chartsRow.setPadding(new Insets(5, 0, 5, 0));  // bottom padding added here
+        chartsRow.setPadding(new Insets(5, 0, 5, 0));
+        chartsRow.setMinHeight(500);
         HBox.setHgrow(leftColumn, Priority.ALWAYS);
         HBox.setHgrow(rightColumn, Priority.ALWAYS);
-        chartsRow.setMinHeight(500);
 
-        // ===== Final Layout =====
-        VBox layoutRoot = new VBox();
-        layoutRoot.setSpacing(5); // consistent spacing between title, statsRow, and chartsRow
-        layoutRoot.setPadding(new Insets(20, 20, 20, 20));
+        // ===== Final Layout Root =====
+        VBox layoutRoot = new VBox(5, title, statsRow, chartsRow);
+        layoutRoot.setPadding(new Insets(20));
         layoutRoot.setAlignment(Pos.TOP_CENTER);
         layoutRoot.setStyle("-fx-background-color: #1e1e1e;");
-
-        layoutRoot.getChildren().addAll(title, statsRow, chartsRow);
 
         return layoutRoot;
     }
 
-    // Creates a stat box (tile) with a label, value, and optional click behavior
+    /**
+     * Creates a styled statistic box (e.g., Total Items).
+     *
+     * @param labelText  Label text under the number.
+     * @param valueText  The actual numeric/statistic value.
+     * @param accentColor Color used for value text.
+     * @param onClick    Optional click action.
+     * @return A styled VBox for the stat box.
+     */
     private static VBox createStatBox(String labelText, String valueText, Color accentColor, Runnable onClick) {
         Label value = new Label(valueText);
         value.getStyleClass().add("stat-value");
@@ -110,13 +119,16 @@ public class AdminDashboardLayout {
         box.setMaxWidth(Double.MAX_VALUE);
 
         if (onClick != null) {
-            box.setOnMouseClicked((MouseEvent e) -> onClick.run());
+            box.setOnMouseClicked(e -> onClick.run());
             box.setStyle(box.getStyle() + " -fx-cursor: hand;");
         }
 
         return box;
     }
 
+    /**
+     * Converts a JavaFX Color to a hex string.
+     */
     private static String toHexColor(Color color) {
         return String.format("#%02X%02X%02X",
                 (int) (color.getRed() * 255),
@@ -124,59 +136,42 @@ public class AdminDashboardLayout {
                 (int) (color.getBlue() * 255));
     }
 
-
-    // Creates a bar chart depending on the given title logic
-    private static BarChart<String, Number> createChart(String title) {
-        // Create axes
+    /**
+     * Creates a bar chart for a given dashboard chart title.
+     */
+    private static BarChart<String, Number> createBarChart(String title) {
         CategoryAxis xAxis = new CategoryAxis();
         NumberAxis yAxis = new NumberAxis();
-        xAxis.setLabel("Category");
-        yAxis.setLabel("Value");
-
-        // Create bar chart
         BarChart<String, Number> barChart = new BarChart<>(xAxis, yAxis);
+
         barChart.setTitle(title);
-        XYChart.Series<String, Number> series = new XYChart.Series<>();
-        series.setName(title);
+        barChart.setLegendVisible(false);
         barChart.setStyle("-fx-background-color: #2e2e2e; -fx-background-radius: 10; -fx-padding: 10;");
+        xAxis.setTickMarkVisible(false);
+        yAxis.setTickMarkVisible(true);
+        barChart.setHorizontalGridLinesVisible(true);
+        barChart.setVerticalGridLinesVisible(false);
 
         String sql;
+        boolean truncateLabels = false;
+
+        // Determine SQL and axis labels based on chart type
         switch (title) {
             case "Sales This Month" -> {
                 xAxis.setLabel("Category");
                 yAxis.setLabel("Quantity Sold");
-                sql = """
-                SELECT c.category_name, SUM(si.si_qty) AS total
-                FROM sale_item si
-                JOIN product p ON si.product_id = p.product_id
-                JOIN category c ON p.category_id = c.category_id
-                JOIN sale s ON si.sale_id = s.sale_id
-                WHERE MONTH(s.sale_date) = MONTH(CURDATE())
-                  AND YEAR(s.sale_date) = YEAR(CURDATE())
-                GROUP BY c.category_name
-                ORDER BY total DESC
-            """;
+                sql = buildSalesQuery("MONTH(s.sale_date) = MONTH(CURDATE()) AND YEAR(s.sale_date) = YEAR(CURDATE())");
             }
             case "Sales Last Month" -> {
                 xAxis.setLabel("Category");
                 yAxis.setLabel("Quantity Sold");
-                sql = """
-                SELECT c.category_name, SUM(si.si_qty) AS total
-                FROM sale_item si
-                JOIN product p ON si.product_id = p.product_id
-                JOIN category c ON p.category_id = c.category_id
-                JOIN sale s ON si.sale_id = s.sale_id
-                WHERE MONTH(s.sale_date) = MONTH(CURDATE() - INTERVAL 1 MONTH)
-                  AND YEAR(s.sale_date) = YEAR(CURDATE() - INTERVAL 1 MONTH)
-                GROUP BY c.category_name
-                ORDER BY total DESC
-            """;
+                sql = buildSalesQuery("MONTH(s.sale_date) = MONTH(CURDATE() - INTERVAL 1 MONTH) AND YEAR(s.sale_date) = YEAR(CURDATE() - INTERVAL 1 MONTH)");
             }
             case "Most Popular Items" -> {
                 xAxis.setLabel("Product");
                 yAxis.setLabel("Quantity Sold");
-                xAxis.setTickLabelRotation(0); // horizontal
-
+                xAxis.setTickLabelRotation(0);
+                truncateLabels = true;
                 sql = """
                     SELECT p.product_name, SUM(si.si_qty) AS total
                     FROM sale_item si
@@ -188,56 +183,74 @@ public class AdminDashboardLayout {
                     LIMIT 5
                 """;
             }
-
             default -> {
                 barChart.setTitle("Invalid Chart Type");
                 return barChart;
             }
         }
 
+        // Load data into chart
+        XYChart.Series<String, Number> series = loadChartData(sql, truncateLabels);
+        if (!series.getData().isEmpty()) {
+            int max = series.getData().stream()
+                    .mapToInt(d -> d.getYValue().intValue())
+                    .max()
+                    .orElse(10);
+            int upperBound = ((max + 9) / 10) * 10;
+            yAxis.setAutoRanging(false);
+            yAxis.setUpperBound(upperBound);
+            yAxis.setTickUnit(upperBound / 5.0);
+        }
+
+        barChart.getData().add(series);
+        return barChart;
+    }
+
+    /**
+     * Loads bar chart data from SQL result.
+     */
+    private static XYChart.Series<String, Number> loadChartData(String sql, boolean truncateLabel) {
+        XYChart.Series<String, Number> series = new XYChart.Series<>();
+
         try (Connection conn = JDBC.connect();
              PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
 
-            int maxVal = 10;
-
             while (rs.next()) {
-                String label = rs.getString(1);  // category or product name
-                if (title.equals("Most Popular Items") && label.length() > 12) {
+                String label = rs.getString(1);
+                if (truncateLabel && label.length() > 12) {
                     label = label.substring(0, 10) + "...";
                 }
-                int value = rs.getInt(2);        // quantity
+                int value = rs.getInt(2);
                 series.getData().add(new XYChart.Data<>(label, value));
-
-                if (value > maxVal) {
-                    maxVal = value;
-                }
             }
-
-            // Adjust Y-axis to nearest 10 above max value
-            int upperBound = ((maxVal + 9) / 10) * 10;
-            yAxis.setAutoRanging(false);
-            yAxis.setUpperBound(upperBound);
-            yAxis.setTickUnit(upperBound / 5.0);
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
-        barChart.getData().add(series);
-        barChart.setLegendVisible(false);
-
-        barChart.setHorizontalGridLinesVisible(true);
-        barChart.setVerticalGridLinesVisible(false);
-        xAxis.setTickMarkVisible(false);
-        yAxis.setTickMarkVisible(true);
-        barChart.setAlternativeRowFillVisible(false);
-        barChart.setAlternativeColumnFillVisible(false);
-
-        return barChart;
+        return series;
     }
 
-    // Creates a pie chart showing today's sales grouped by category
+    /**
+     * Builds SQL for sales by category using a provided WHERE clause.
+     */
+    private static String buildSalesQuery(String whereClause) {
+        return String.format("""
+            SELECT c.category_name, SUM(si.si_qty) AS total
+            FROM sale_item si
+            JOIN product p ON si.product_id = p.product_id
+            JOIN category c ON p.category_id = c.category_id
+            JOIN sale s ON si.sale_id = s.sale_id
+            WHERE %s
+            GROUP BY c.category_name
+            ORDER BY total DESC
+        """, whereClause);
+    }
+
+    /**
+     * Creates a pie chart showing today's sales distribution by category.
+     */
     private static PieChart createPieChart() {
         PieChart chart = new PieChart();
         chart.setTitle("Today's Sales");
@@ -246,61 +259,49 @@ public class AdminDashboardLayout {
         chart.setLegendSide(Side.BOTTOM);
         chart.setStyle("-fx-background-color: #2e2e2e; -fx-background-radius: 10; -fx-padding: 10;");
 
-        try (Connection conn = JDBC.connect()) {
-            if (conn == null) {
-                System.out.println("DB connection is null.");
-                return chart;
-            }
+        String sql = """
+            SELECT c.category_name AS label, SUM(si.si_qty) AS value
+            FROM sale s
+            JOIN sale_item si ON s.sale_id = si.sale_id
+            JOIN product p ON si.product_id = p.product_id
+            JOIN category c ON p.category_id = c.category_id
+            WHERE DATE(s.sale_date) = CURDATE()
+            GROUP BY c.category_name
+        """;
 
-            String query = """
-                SELECT c.category_name AS label, SUM(si.si_qty) AS value
-                FROM sale s
-                JOIN sale_item si ON s.sale_id = si.sale_id
-                JOIN product p ON si.product_id = p.product_id
-                JOIN category c ON p.category_id = c.category_id
-                WHERE DATE(s.sale_date) = CURDATE()
-                GROUP BY c.category_name
-            """;
-
-            PreparedStatement stmt = conn.prepareStatement(query);
-            ResultSet rs = stmt.executeQuery();
+        try (Connection conn = JDBC.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                String label = rs.getString("label");
-                int value = rs.getInt("value");
-                chart.getData().add(new PieChart.Data(label, value));
+                chart.getData().add(new PieChart.Data(rs.getString("label"), rs.getInt("value")));
             }
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
+        // UI adjustments for chart visuals
         Platform.runLater(() -> {
-            // Make the chart background inside transparent
             Node bg = chart.lookup(".chart-plot-background");
             if (bg != null) {
                 bg.setStyle("-fx-background-color: transparent;");
             }
 
-            // Make legend text white and legend background transparent
             Node legend = chart.lookup(".chart-legend");
             if (legend != null) {
                 legend.setStyle("""
-            -fx-background-color: transparent;
-            -fx-text-fill: white;
-            -fx-font-size: 13px;
-        """);
+                    -fx-background-color: transparent;
+                    -fx-text-fill: white;
+                    -fx-font-size: 13px;
+                """);
             }
 
-            // Make each legend item label white
-            chart.lookupAll(".chart-legend-item").forEach(item -> {
-                item.setStyle("-fx-text-fill: white;");
-            });
+            chart.lookupAll(".chart-legend-item")
+                    .forEach(item -> item.setStyle("-fx-text-fill: white;"));
 
-            // Make slice labels white
-            chart.lookupAll(".chart-pie-label").forEach(label ->
-                    label.setStyle("-fx-fill: white; -fx-font-size: 13px;")
-            );
+            chart.lookupAll(".chart-pie-label")
+                    .forEach(label -> label.setStyle("-fx-fill: white; -fx-font-size: 13px;"));
         });
 
         return chart;
