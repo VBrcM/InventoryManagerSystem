@@ -1,9 +1,7 @@
-package Pages.Layouts;
+package Pages.Layouts.Employee;
 
-import DB.Formatter;
-import Model.DAO.ProductDAO;
-import Model.DAO.TransactionDAO;
-import Model.POJO.Transaction;
+import Model.DAO.*;
+import Model.POJO.*;
 import Pages.EmployeeAccess;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -15,8 +13,17 @@ import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import java.util.List;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.LinkedHashMap;
+import static DB.Formatter.formatCurrency;
+import static Pages.EmployeeAccess.layout;
 
 public class EmployeeDashboardLayout {
 
@@ -34,9 +41,9 @@ public class EmployeeDashboardLayout {
         // ===== Stat Boxes =====
         VBox todaysSales = createStatBox(
                 "Today's Sales",
-                Formatter.formatCurrency(TransactionDAO.getTodaySalesTotal()),
+                formatCurrency(getTodaySalesTotal()),  // Use the updated method here
                 Color.web("#4CAF50"),
-                () -> EmployeeAccess.getLayout().setCenter(EmployeeSalesLayout.build(EmployeeAccess.getLayout()))
+                () -> EmployeeAccess.getLayout().setCenter(EmployeeSalesLayout.build(layout))
         );
 
         VBox transactions = createStatBox(
@@ -48,7 +55,7 @@ public class EmployeeDashboardLayout {
 
         VBox lowStock = createStatBox(
                 "Low Stock",
-                TransactionDAO.getLowStockCount() + " items",
+                ProductDAO.getLowStockCount() + " items",
                 Color.web("#F44336"),
                 () -> EmployeeAccess.getLayout().setCenter(EmployeeInventoryLayout.build())
         );
@@ -89,7 +96,20 @@ public class EmployeeDashboardLayout {
         layout.setPadding(new Insets(20));
         layout.setAlignment(Pos.TOP_CENTER);
         layout.setStyle("-fx-background-color: #1e1e1e;");
+
+        // Log for debugging
+        System.out.println("Today's Sales Total: " + getTodaySalesTotal());  // Debugging log
+
         return layout;
+    }
+
+    // Fetch today's sales total with proper exception handling
+    private static double getTodaySalesTotal() {
+        double totalSales = SaleDAO.getTodaySalesTotal();
+        if (totalSales == 0.0) {
+            System.out.println("No sales recorded for today.");  // Debugging log if no sales data is returned
+        }
+        return totalSales;
     }
 
     private static VBox createStatBox(String labelText, String valueText, Color accentColor, Runnable onClick) {
@@ -219,13 +239,47 @@ public class EmployeeDashboardLayout {
         VBox transactionsList = new VBox(8);
         transactionsList.setId("transactionsList");
 
-        List<Transaction> recent = TransactionDAO.getRecentTransactions();
-        for (Transaction t : recent) {
-            addTransactionItem(transactionsList, t.getFormattedTime(), "₱" + t.getAmount(), t.getDescription());
+        int maxItems = 12;
+        List<Transaction> flatList = TransactionDAO.getRecentTransactions(12); // get more for grouping
+
+        // Group by t_id
+        Map<Integer, List<Transaction>> grouped = new LinkedHashMap<>();
+        for (Transaction txn : flatList) {
+            grouped.computeIfAbsent(txn.getTId(), k -> new ArrayList<>()).add(txn);
+        }
+
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("h:mm a");
+
+        int count = 0;
+        for (Map.Entry<Integer, List<Transaction>> entry : grouped.entrySet()) {
+            if (count++ >= maxItems) break;
+
+            List<Transaction> txns = entry.getValue();
+            LocalDateTime time = txns.get(0).getTDate();
+            double totalAmount = txns.stream().mapToDouble(Transaction::getAmount).sum();
+
+            String formattedTime = time.format(timeFormatter);
+            String formattedAmount = formatCurrency(totalAmount);
+
+            StringBuilder description = new StringBuilder();
+            for (int i = 0; i < txns.size(); i++) {
+                Transaction t = txns.get(i);
+                description.append(t.getProductName())
+                        .append(" (").append(t.getTQty()).append(")");
+                if (i < txns.size() - 1) description.append(", ");
+            }
+
+            String descStr = description.toString();
+            if (descStr.length() > 70) {
+                descStr = descStr.substring(0, 70) + "...";
+            }
+
+            addTransactionItem(transactionsList, formattedTime, formattedAmount, descStr);
         }
 
         return transactionsList;
     }
+
 
     private static void addTransactionItem(VBox container, String time, String amount, String items) {
         HBox item = new HBox(15);

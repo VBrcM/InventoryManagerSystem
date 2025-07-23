@@ -2,6 +2,7 @@ package DB;
 
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
@@ -21,6 +22,13 @@ public class Formatter {
         String result = dateTime.format(formatter);
         System.out.println("[DEBUG] Formatted time: " + result);
         return result;
+    }
+
+    public static String formatTime(LocalTime time) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm a");
+        String result = time.format(formatter);
+        System.out.println("[DEBUG] Formatted time: " + result);
+        return time.format(DateTimeFormatter.ofPattern("hh:mm a"));
     }
 
     public static String formatNumber(int value) {

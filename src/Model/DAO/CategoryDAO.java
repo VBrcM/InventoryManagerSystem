@@ -2,66 +2,53 @@ package Model.DAO;
 
 import DB.JDBC;
 import Model.POJO.Category;
-
 import java.sql.*;
 import java.util.*;
 
 public class CategoryDAO {
 
-    // Insert category
-    public void insert(Category category) throws SQLException {
+    public static boolean insert(Category category) throws SQLException {
         String sql = "INSERT INTO category (category_name) VALUES (?)";
         try (Connection conn = JDBC.connect();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             stmt.setString(1, category.getCategoryName());
-            stmt.executeUpdate();
-            System.out.printf("[DEBUG] Inserted category: %s%n", category.getCategoryName());
+            int affectedRows = stmt.executeUpdate();
 
-        } catch (SQLException e) {
-            System.err.printf("[ERROR] Failed to insert category: %s%n", category.getCategoryName());
-            e.printStackTrace();
-            throw e;
+            if (affectedRows > 0) {
+                try (ResultSet rs = stmt.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        category.setCategoryId(rs.getInt(1));
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
     }
 
-    // Update category
-    public void update(Category category) throws SQLException {
+    public static boolean update(Category category) throws SQLException {
         String sql = "UPDATE category SET category_name = ? WHERE category_id = ?";
         try (Connection conn = JDBC.connect();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, category.getCategoryName());
             stmt.setInt(2, category.getCategoryId());
-            stmt.executeUpdate();
-            System.out.printf("[DEBUG] Updated category ID %d to: %s%n", category.getCategoryId(), category.getCategoryName());
-
-        } catch (SQLException e) {
-            System.err.printf("[ERROR] Failed to update category ID %d%n", category.getCategoryId());
-            e.printStackTrace();
-            throw e;
+            return stmt.executeUpdate() > 0;
         }
     }
 
-    // Delete category
-    public void delete(int categoryId) throws SQLException {
+    public static boolean delete(int categoryId) throws SQLException {
         String sql = "DELETE FROM category WHERE category_id = ?";
         try (Connection conn = JDBC.connect();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setInt(1, categoryId);
-            stmt.executeUpdate();
-            System.out.printf("[DEBUG] Deleted category with ID: %d%n", categoryId);
-
-        } catch (SQLException e) {
-            System.err.printf("[ERROR] Failed to delete category ID %d%n", categoryId);
-            e.printStackTrace();
-            throw e;
+            return stmt.executeUpdate() > 0;
         }
     }
 
-    // Get all categories
-    public List<Category> getAll() {
+    public static List<Category> getAll() throws SQLException {
         List<Category> categories = new ArrayList<>();
         String sql = "SELECT * FROM category";
 
@@ -70,27 +57,60 @@ public class CategoryDAO {
              ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
-                Category c = new Category(
+                categories.add(new Category(
                         rs.getInt("category_id"),
                         rs.getString("category_name")
-                );
-                categories.add(c);
-                System.out.printf("[DEBUG] Loaded category: %s (ID: %d)%n", c.getCategoryName(), c.getCategoryId());
+                ));
             }
-
-        } catch (SQLException e) {
-            System.err.println("[ERROR] Failed to load categories");
-            e.printStackTrace();
         }
-
         return categories;
     }
 
-    // Get or create category by name
+    public static Category getById(int categoryId) throws SQLException {
+        String sql = "SELECT * FROM category WHERE category_id = ?";
+        try (Connection conn = JDBC.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, categoryId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return new Category(
+                            rs.getInt("category_id"),
+                            rs.getString("category_name")
+                    );
+                }
+            }
+        }
+        return null;
+    }
+
+    public static Map<String, Integer> getStockDistributionByCategory() throws SQLException {
+        Map<String, Integer> distribution = new HashMap<>();
+        String sql = """
+            SELECT c.category_name, SUM(p.stock) AS total_stock
+            FROM product p
+            JOIN category c ON p.category_id = c.category_id
+            GROUP BY c.category_name
+        """;
+
+        try (Connection conn = JDBC.connect();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                distribution.put(
+                        rs.getString("category_name"),
+                        rs.getInt("total_stock")
+                );
+            }
+        }
+        return distribution;
+    }
+
     public Category getOrCreateCategoryByName(String categoryName) {
-        Category category = null;
         String selectSQL = "SELECT * FROM category WHERE category_name = ?";
         String insertSQL = "INSERT INTO category (category_name) VALUES (?)";
+        Category category = null;
 
         try (Connection conn = JDBC.connect();
              PreparedStatement selectStmt = conn.prepareStatement(selectSQL)) {
@@ -99,78 +119,47 @@ public class CategoryDAO {
             ResultSet rs = selectStmt.executeQuery();
 
             if (rs.next()) {
-                int id = rs.getInt("category_id");
-                category = new Category(id, categoryName);
-                System.out.printf("[DEBUG] Found existing category: %s (ID: %d)%n", categoryName, id);
+                category = new Category(
+                        rs.getInt("category_id"),
+                        rs.getString("category_name")
+                );
             } else {
                 try (PreparedStatement insertStmt = conn.prepareStatement(insertSQL, Statement.RETURN_GENERATED_KEYS)) {
                     insertStmt.setString(1, categoryName);
-                    insertStmt.executeUpdate();
+                    int affectedRows = insertStmt.executeUpdate();
 
-                    ResultSet generatedKeys = insertStmt.getGeneratedKeys();
-                    if (generatedKeys.next()) {
-                        int id = generatedKeys.getInt(1);
-                        category = new Category(id, categoryName);
-                        System.out.printf("[DEBUG] Created new category: %s (ID: %d)%n", categoryName, id);
+                    if (affectedRows > 0) {
+                        ResultSet generatedKeys = insertStmt.getGeneratedKeys();
+                        if (generatedKeys.next()) {
+                            int newId = generatedKeys.getInt(1);
+                            category = new Category(newId, categoryName);
+                        }
                     }
                 }
             }
 
         } catch (SQLException e) {
-            System.err.printf("[ERROR] getOrCreateCategoryByName failed for: %s%n", categoryName);
+            System.err.println("Error in getOrCreateCategoryByName: " + e.getMessage());
             e.printStackTrace();
         }
 
         return category;
     }
 
-    // Stock distribution grouped by category
-    public static Map<String, Integer> getStockDistributionByCategory() {
-        String sql = """
-            SELECT c.category_name, SUM(p.stock) AS total_stock
-            FROM product p
-            JOIN category c ON p.category_id = c.category_id
-            GROUP BY c.category_name
-        """;
-
-        Map<String, Integer> data = new HashMap<>();
-
-        try (Connection conn = JDBC.connect();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-
-            System.out.println("[DEBUG] Fetching stock distribution by category...");
-
-            while (rs.next()) {
-                String category = rs.getString("category_name");
-                int stock = rs.getInt("total_stock");
-                data.put(category, stock);
-                System.out.printf("[DEBUG] Category: %s, Stock: %d%n", category, stock);
-            }
-
-        } catch (SQLException e) {
-            System.err.println("[ERROR] Failed to fetch stock distribution by category");
-            e.printStackTrace();
-        }
-
-        return data;
-    }
-
-    // Get all category names only
     public static List<String> getAllCategoryNames() {
         List<String> categoryNames = new ArrayList<>();
         String sql = "SELECT category_name FROM category";
 
         try (Connection conn = JDBC.connect();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
                 categoryNames.add(rs.getString("category_name"));
             }
 
         } catch (SQLException e) {
-            System.err.println("[ERROR] Failed to load category names");
+            System.err.println("[ERROR] Failed to fetch category names: " + e.getMessage());
             e.printStackTrace();
         }
 

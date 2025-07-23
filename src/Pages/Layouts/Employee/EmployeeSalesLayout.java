@@ -1,5 +1,6 @@
-package Pages.Layouts;
+package Pages.Layouts.Employee;
 
+import DB.JDBC;
 import Dialogs.PopUpDialog;
 import Model.DAO.*;
 import Model.POJO.*;
@@ -17,35 +18,15 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
 public class EmployeeSalesLayout {
 
-    public static class CartItem {
-        private final Product product;
-        private final IntegerProperty quantity = new SimpleIntegerProperty();
-
-        public CartItem(Product product, int quantity) {
-            this.product = product;
-            this.quantity.set(quantity); // use property
-        }
-
-        public Product getProduct() { return product; }
-        public int getQuantity() {
-            return quantity.get();
-        }
-        public void setQuantity(int quantity) {
-            this.quantity.set(quantity);
-        }
-
-        public double getTotal() {
-            return product.getProductPrice() * quantity.get();
-        }
-
-        public IntegerProperty quantityProperty() {
-            return quantity;
-        }    }
+    private ObservableList<CartItem> cartItems = FXCollections.observableArrayList();
 
     public static VBox build(BorderPane parentLayout) {
         VBox layout = new VBox();
@@ -95,7 +76,15 @@ public class EmployeeSalesLayout {
         HBox.setHgrow(searchField, Priority.ALWAYS);
         searchField.setMaxWidth(Double.MAX_VALUE);
 
-        ObservableList<Product> allProducts = FXCollections.observableArrayList(ProductDAO.getAll());
+        ObservableList<Product> allProducts = FXCollections.observableArrayList();
+
+        try {
+            allProducts.addAll(ProductDAO.getAll());
+        } catch (SQLException e) {
+            e.printStackTrace();
+            PopUpDialog.showError("Failed to load products:\n" + e.getMessage());
+        }
+
         FilteredList<Product> filteredProducts = new FilteredList<>(allProducts, p -> true);
 
         // 🐞 Debug: Print loaded product count
@@ -191,31 +180,95 @@ public class EmployeeSalesLayout {
 
         completeSaleBtn.setOnAction(e -> {
             if (cartItems.isEmpty()) {
-                PopUpDialog.showError("Cart is empty!");
+                PopUpDialog.showError("Cart is empty.");
                 return;
             }
-            try {
-                int saleQty = cartItems.stream().mapToInt(CartItem::getQuantity).sum();
-                double totalAmount = cartItems.stream().mapToDouble(CartItem::getTotal).sum();
-                int saleId = SaleDAO.insert(saleQty, totalAmount);
 
-                for (CartItem item : cartItems) {
-                    SaleItemDAO.insert(new SaleItem(
-                            saleId,
-                            item.getProduct().getProductId(),
-                            item.getQuantity(),
-                            item.getProduct().getProductPrice(),
-                            LocalDate.now()
-                    ));
-                    ProductDAO.reduceStock(item.getProduct().getProductId(), item.getQuantity());
+            Connection conn = null;
+
+            try {
+                conn = JDBC.connect();
+                conn.setAutoCommit(false); // Start transaction
+
+                // 1. Prepare data
+                int totalQty = cartItems.stream().mapToInt(CartItem::getQuantity).sum();
+                double totalAmount = cartItems.stream().mapToDouble(CartItem::getTotal).sum();
+                LocalDateTime now = LocalDateTime.now();
+
+                // 2. Create Sale object
+                Sale sale = new Sale();
+                sale.setSaleQty(totalQty);
+                sale.setTotalAmount(totalAmount);
+                sale.setSaleDate(now);
+
+                // 3. Insert sale + items
+                int saleId = SaleDAO.insertSale(conn, sale, cartItems);
+                if (saleId <= 0) {
+                    conn.rollback();
+                    PopUpDialog.showError("Failed to complete sale.");
+                    return;
                 }
 
-                PopUpDialog.showInfo("Sale completed successfully!");
-                System.out.println("[DEBUG] Sale completed. ID: " + saleId + ", Total: ₱" + totalAmount);
-                parentLayout.setCenter(EmployeeSalesLayout.build(parentLayout)); // refresh
+                // 4. Update stock and record transactions
+                for (CartItem item : cartItems) {
+                    Product product = item.getProduct();
+                    int qty = item.getQuantity();
+                    int productId = product.getProductId();
+
+                    if (qty > product.getStock()) {
+                        conn.rollback();
+                        PopUpDialog.showError("Not enough stock for: " + product.getProductName());
+                        return;
+                    }
+
+                    if (!ProductDAO.reduceStock(conn, productId, qty)) {
+                        conn.rollback();
+                        PopUpDialog.showError("Failed to reduce stock for: " + product.getProductName());
+                        return;
+                    }
+
+                    Transaction txn = new Transaction(productId, qty, now);
+                    if (!TransactionDAO.recordTransaction(conn, txn)) {
+                        conn.rollback();
+                        PopUpDialog.showError("Failed to record transaction for: " + product.getProductName());
+                        return;
+                    }
+                }
+
+                // 5. Commit changes
+                conn.commit();
+                PopUpDialog.showInfo("Sale completed successfully.");
+                cartItems.clear();
+
+                // 🟢 Refresh product table with updated stock
+                try {
+                    allProducts.setAll(ProductDAO.getAll());
+                    productsTable.refresh();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                    PopUpDialog.showError("Failed to reload products:\n" + ex.getMessage());
+                }
+
+
             } catch (Exception ex) {
-                PopUpDialog.showError("Sale failed!");
                 ex.printStackTrace();
+                try {
+                    if (conn != null) conn.rollback();
+                } catch (Exception rollbackEx) {
+                    rollbackEx.printStackTrace();
+                    PopUpDialog.showError("Rollback failed: " + rollbackEx.getMessage());
+                }
+                PopUpDialog.showError("Transaction failed: " + ex.getMessage());
+
+            } finally {
+                try {
+                    if (conn != null) {
+                        conn.setAutoCommit(true); // Always reset
+                        conn.close();
+                    }
+                } catch (Exception closeEx) {
+                    closeEx.printStackTrace();
+                }
             }
         });
 
@@ -400,5 +453,4 @@ public class EmployeeSalesLayout {
 
         rebinder.run(); // Initial bind
     }
-
 }

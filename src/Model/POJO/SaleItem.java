@@ -1,6 +1,6 @@
 package Model.POJO;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class SaleItem {
     private int siId;
@@ -8,18 +8,39 @@ public class SaleItem {
     private int productId;
     private int siQty;
     private double siPrice;
-    private LocalDate siDate; // ✅ Use consistent type
+    private LocalDateTime siDate;
     private String productName;
     private String categoryName;
 
     public SaleItem() {}
 
-    public SaleItem(int saleId, int productId, int siQty, double siPrice, LocalDate siDate) {
+    public SaleItem(int siId, int saleId, int productId,
+                    int siQty, double siPrice, LocalDateTime siDate) {
+        this.siId = siId;
         this.saleId = saleId;
         this.productId = productId;
         this.siQty = siQty;
         this.siPrice = siPrice;
         this.siDate = siDate;
+    }
+
+    // Getters and setters
+
+
+    public String getProductName() {
+        return productName;
+    }
+
+    public void setProductName(String productName) {
+        this.productName = productName;
+    }
+
+    public String getCategoryName() {
+        return categoryName;
+    }
+
+    public void setCategoryName(String categoryName) {
+        this.categoryName = categoryName;
     }
 
     public int getSiId() {
@@ -46,14 +67,6 @@ public class SaleItem {
         this.productId = productId;
     }
 
-    public LocalDate getSiDate() {
-        return siDate;
-    }
-
-    public void setSiDate(LocalDate siDate) {
-        this.siDate = siDate;
-    }
-
     public int getSiQty() {
         return siQty;
     }
@@ -70,19 +83,11 @@ public class SaleItem {
         this.siPrice = siPrice;
     }
 
-    public String getProductName() {
-        return productName;
+    public LocalDateTime getSiDate() {
+        return siDate;
     }
 
-    public void setProductName(String productName) {
-        this.productName = productName;
-    }
-
-    public String getCategoryName() {
-        return categoryName;
-    }
-
-    public void setCategoryName(String categoryName) {
-        this.categoryName = categoryName;
+    public void setSiDate(LocalDateTime siDate) {
+        this.siDate = siDate;
     }
 }

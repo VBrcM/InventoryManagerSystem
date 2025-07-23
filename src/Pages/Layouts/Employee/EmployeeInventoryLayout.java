@@ -1,4 +1,4 @@
-package Pages.Layouts;
+package Pages.Layouts.Employee;
 
 import DB.Formatter;
 import Model.DAO.ProductDAO;
@@ -13,9 +13,15 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class EmployeeInventoryLayout {
+
+    private static TableView<Product> table;
+    private static ObservableList<Product> products;
+    private static FilteredList<Product> filteredList;
 
     public static StackPane build() {
         return build(false); // Default: show all
@@ -30,7 +36,14 @@ public class EmployeeInventoryLayout {
         searchField.getStyleClass().add("input-field");
 
         ProductDAO dao = new ProductDAO();
-        List<Product> productList = dao.getAll();
+        List<Product> productList = new ArrayList<>();
+
+        try {
+            productList = dao.getAll();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            // Optional: Show an error dialog
+        }
 
         if (showOnlyLowStock) {
             productList.removeIf(p -> p.getStock() > 0);
@@ -147,4 +160,5 @@ public class EmployeeInventoryLayout {
 
         return root;
     }
+
 }

@@ -1,4 +1,5 @@
-package Pages.Layouts;
+package Pages.Layouts.Admin;
+
 
 import DB.*;
 import Model.DAO.SaleItemDAO;
@@ -8,11 +9,15 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
+
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+
 public class AdminReportDetailsLayout {
+
 
     /**
      * Builds the report details page for a specific date.
@@ -30,17 +35,21 @@ public class AdminReportDetailsLayout {
         title.setMaxWidth(Double.MAX_VALUE);
         title.setAlignment(Pos.CENTER_LEFT);
 
+
         // ===== Table Setup =====
         TableView<SaleItem> table = new TableView<>();
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         table.getStyleClass().add("table-view");
 
+
         // ===== Table Columns =====
         TableColumn<SaleItem, String> nameCol = new TableColumn<>("Item Name");
         nameCol.setCellValueFactory(new PropertyValueFactory<>("productName"));
 
+
         TableColumn<SaleItem, String> categoryCol = new TableColumn<>("Category");
         categoryCol.setCellValueFactory(new PropertyValueFactory<>("categoryName"));
+
 
         TableColumn<SaleItem, Integer> quantityCol = new TableColumn<>("Quantity");
         quantityCol.setCellValueFactory(new PropertyValueFactory<>("siQty"));
@@ -52,6 +61,7 @@ public class AdminReportDetailsLayout {
             }
         });
 
+
         TableColumn<SaleItem, Double> priceCol = new TableColumn<>("Price");
         priceCol.setCellValueFactory(new PropertyValueFactory<>("siPrice"));
         priceCol.setCellFactory(col -> new TableCell<>() {
@@ -61,6 +71,7 @@ public class AdminReportDetailsLayout {
                 setText(empty || val == null ? null : Formatter.formatCurrency(val));
             }
         });
+
 
         TableColumn<SaleItem, Double> totalCol = new TableColumn<>("Total Price");
         totalCol.setCellValueFactory(cellData -> {
@@ -76,9 +87,15 @@ public class AdminReportDetailsLayout {
             }
         });
 
+
         table.getColumns().addAll(nameCol, categoryCol, quantityCol, priceCol, totalCol);
-        table.getItems().addAll(SaleItemDAO.getSaleItemsByDate(date));
+        try {
+            table.getItems().setAll(SaleItemDAO.getSaleItemsByDate(date));
+        } catch (SQLException e) {
+            e.printStackTrace(); // Log to console (for dev)
+        }
         VBox.setVgrow(table, Priority.ALWAYS);
+
 
         // ===== Back Button =====
         Button backBtn = new Button("Back to Reports");
@@ -86,14 +103,17 @@ public class AdminReportDetailsLayout {
         backBtn.setPrefSize(200, 50);
         backBtn.setOnAction(e -> parentLayout.setCenter(AdminReportsLayout.build(parentLayout)));
 
+
         HBox buttonBox = new HBox(backBtn);
         buttonBox.setAlignment(Pos.CENTER);
         buttonBox.setPadding(new Insets(10, 0, 0, 0));
+
 
         // ===== Final Layout =====
         VBox layout = new VBox(20, title, table, buttonBox);
         layout.setPadding(new Insets(30));
         layout.setAlignment(Pos.TOP_CENTER);
+
 
         return layout;
     }

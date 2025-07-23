@@ -1,8 +1,8 @@
-package Pages.Layouts;
+package Pages.Layouts.Employee;
 
 import DB.Formatter;
-import Model.POJO.SaleItem;
-import Model.DAO.SaleItemDAO;
+import Model.DAO.TransactionDAO;
+import Model.POJO.Transaction;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -12,20 +12,20 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-public class AdminReportsLayout {
+public class EmployeeTransactionLogLayout {
 
     private static int maxMonths = 1;
     private static int totalDaysLoaded = 0;
     private static final int DAYS_PER_SHOW_MORE = 10;
 
     /**
-     * Builds the main layout for displaying daily sales reports.
+     * Builds the main layout for employee transaction logs.
      */
     public static VBox build(BorderPane parentLayout) {
         totalDaysLoaded = 0;
 
         // ===== Title Label =====
-        Label title = new Label("Sales Reports");
+        Label title = new Label("Transaction Log");
         title.setId("title-label");
         title.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: white;");
         title.setPadding(new Insets(10, 0, 10, 0));
@@ -50,14 +50,13 @@ public class AdminReportsLayout {
         dayList.setPadding(new Insets(10));
         dayList.setAlignment(Pos.TOP_CENTER);
 
-        // ===== Footer Box for "Show More" / No Records Message =====
+        // ===== Footer Box =====
         VBox footerBox = new VBox();
         footerBox.setAlignment(Pos.CENTER);
         dayList.getChildren().add(footerBox);
 
-        // ===== Filter Change Handler =====
+        // ===== Filter Logic =====
         filterBox.setOnAction(e -> {
-            // System.out.println("Filter changed to: " + filterBox.getValue());
             totalDaysLoaded = 0;
             maxMonths = switch (filterBox.getValue()) {
                 case "Last 2 months" -> 2;
@@ -69,7 +68,7 @@ public class AdminReportsLayout {
             loadMoreDays(dayList, parentLayout, footerBox, Integer.MAX_VALUE, true);
         });
 
-        // ===== Scrollable Content Area =====
+        // ===== ScrollPane Setup =====
         ScrollPane scrollPane = new ScrollPane(dayList);
         scrollPane.setFitToWidth(true);
         scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
@@ -86,24 +85,25 @@ public class AdminReportsLayout {
     }
 
     /**
-     * Creates a summary card for a specific day.
+     * Creates a daily transaction summary card.
      */
-    private static VBox createDaySummary(LocalDate date, DateTimeFormatter formatter, List<SaleItem> transactions, BorderPane layout) {
-        // ===== Date Label =====
+    private static VBox createDaySummary(LocalDate date, DateTimeFormatter formatter, List<Transaction> transactions, BorderPane layout) {
         Label dateLabel = new Label("📅 " + date.format(formatter));
         dateLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: white;");
 
-        // ===== Total Sales Calculation =====
-        double total = transactions.stream()
-                .mapToDouble(item -> item.getSiQty() * item.getSiPrice())
-                .sum();
-        Label totalLabel = new Label("Total Sales: " + Formatter.formatCurrency(total));
-        totalLabel.setStyle("-fx-text-fill: #cccccc;");
+        int totalTransactions = transactions.size();
+        Label countLabel = new Label("Total Transactions: " + totalTransactions);
+        countLabel.setStyle("-fx-text-fill: #cccccc;");
 
-        // ===== View Button =====
+        double totalSales = transactions.stream()
+                .mapToDouble(t -> t.getTQty() * t.getAmount())
+                .sum();
+        Label salesLabel = new Label("Total Sales of the Day: " + Formatter.formatCurrency(totalSales));
+        salesLabel.setStyle("-fx-text-fill: #cccccc;");
+
         Button viewBtn = new Button("View Details");
         viewBtn.getStyleClass().add("inventory-button");
-        viewBtn.setOnAction(e -> layout.setCenter(AdminReportDetailsLayout.build(layout, date)));
+        viewBtn.setOnAction(e -> layout.setCenter(EmployeeTransactionLogDetailsLayout.build(layout, date, transactions)));
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -111,18 +111,19 @@ public class AdminReportsLayout {
         HBox header = new HBox(10, dateLabel, spacer, viewBtn);
         header.setAlignment(Pos.CENTER_LEFT);
 
-        VBox card = new VBox(10, header, totalLabel);
+        VBox card = new VBox(10, header, countLabel, salesLabel);
         card.setPadding(new Insets(15));
         card.setMaxWidth(Double.MAX_VALUE);
         card.setStyle("-fx-background-color: #2e2e2e; -fx-background-radius: 10;");
+
         return card;
     }
 
     /**
-     * Loads a batch of report cards, filtered by month and grouped by date.
+     * Loads and displays transaction summaries by day.
      */
     private static void loadMoreDays(VBox dayList, BorderPane layout, VBox footerBox, int daysToLoad, boolean respectFilterLimit) {
-        List<LocalDate> allDates = SaleItemDAO.getAllTransactionDates();
+        List<LocalDate> allDates = TransactionDAO.getAllTransactionDates();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM dd, yyyy");
         LocalDate today = LocalDate.now();
         LocalDate minDate = today.minusMonths(maxMonths);
@@ -134,10 +135,10 @@ public class AdminReportsLayout {
             LocalDate date = allDates.get(i);
             if (respectFilterLimit && date.isBefore(minDate)) break;
 
-            List<SaleItem> transactions = SaleItemDAO.getSaleItemsByDate(date);
+            List<Transaction> transactions = TransactionDAO.getTransactionsByDate(date);
             if (!transactions.isEmpty()) {
-                VBox dayCard = createDaySummary(date, formatter, transactions, layout);
-                dayList.getChildren().add(dayList.getChildren().size() - 1, dayCard);
+                VBox card = createDaySummary(date, formatter, transactions, layout);
+                dayList.getChildren().add(dayList.getChildren().size() - 1, card);
                 added++;
                 totalDaysLoaded++;
             }
@@ -151,14 +152,14 @@ public class AdminReportsLayout {
             more.setOnAction(ev -> loadMoreDays(dayList, layout, footerBox, DAYS_PER_SHOW_MORE, false));
             footerBox.getChildren().add(more);
         } else {
-            Label done = new Label("No more sales records available");
+            Label done = new Label("No more transaction records available");
             done.setStyle("-fx-text-fill: #888; -fx-padding: 10 0 20 0;");
             footerBox.getChildren().add(done);
         }
     }
 
     /**
-     * Refreshes the report layout.
+     * Refreshes the layout.
      */
     public static void refresh(BorderPane parentLayout) {
         parentLayout.setCenter(build(parentLayout));

@@ -122,8 +122,7 @@ public class InventoryDialog {
                 // Insert or update in DB
                 if (productToEdit == null) {
                     // New product
-                    Product inserted = dao.insert(product);
-                    inserted.setCategoryName(categoryObj.getCategoryName());
+                    Product inserted = dao.insert(product);                    inserted.setCategoryName(categoryObj.getCategoryName());
                     products.add(inserted); // Add to ObservableList
                 } else {
                     // Update existing product

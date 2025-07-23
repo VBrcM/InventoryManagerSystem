@@ -1,4 +1,4 @@
-package Pages.Layouts;
+package Pages.Layouts.Employee;
 
 import Model.DAO.SaleDAO;
 import Model.DAO.SaleItemDAO;
@@ -12,7 +12,6 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -73,14 +72,16 @@ public class EmployeeTransactionLayout {
         List<Sale> sales = SaleDAO.getSalesByDate(LocalDate.now());
 
         for (Sale sale : sales) {
-            String items = SaleItemDAO.getItemSummaryBySaleId(sale.getId());
-            String time = sale.getDateTime() != null
-                    ? sale.getDateTime().format(DateTimeFormatter.ofPattern("hh:mm a"))
+            String items = SaleItemDAO.getItemSummaryBySaleId(sale.getSaleId());
+            String time = sale.getSaleDate() != null
+                    ? sale.getSaleDate().format(DateTimeFormatter.ofPattern("hh:mm a"))
                     : "N/A";
 
             Transaction tx = new Transaction(time, items, sale.getTotalAmount());
             transactions.add(tx);
         }
+
+
 
         table.setItems(transactions);
     }

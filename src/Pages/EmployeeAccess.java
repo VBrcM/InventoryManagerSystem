@@ -1,6 +1,7 @@
 package Pages;
 
 import Pages.Layouts.*;
+import Pages.Layouts.Employee.*;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -9,7 +10,7 @@ import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
 public class EmployeeAccess {
-    private static BorderPane layout;
+    public static BorderPane layout;
     private static Stage currentStage;
 
     /**

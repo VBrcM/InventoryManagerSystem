@@ -1,4 +1,4 @@
-package Pages.Layouts;
+package Pages.Layouts.Admin;
 
 import DB.*;
 import Dialogs.*;
@@ -14,6 +14,8 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class AdminInventoryLayout {
@@ -47,7 +49,13 @@ public class AdminInventoryLayout {
 
         // ===== Category Filter =====
         ProductDAO dao = new ProductDAO();
-        List<Product> productList = dao.getAll();
+        List<Product> productList = new ArrayList<>();
+        try {
+            productList = dao.getAll();
+        } catch (SQLException e) {
+            e.printStackTrace(); // or show an error dialog
+        }
+
         if (showOnlyOutOfStock) {
             productList.removeIf(p -> p.getStock() > 0);
         }
@@ -166,13 +174,18 @@ public class AdminInventoryLayout {
             Product selected = table.getSelectionModel().getSelectedItem();
             if (selected != null) {
                 InventoryDialog.show(selected, products, () -> {
-                    List<Product> refreshed = dao.getAll();
-                    if (showOnlyOutOfStock) {
-                        refreshed.removeIf(p -> p.getStock() > 0);
+                    try {
+                        List<Product> refreshed = dao.getAll(); // this was missing
+                        if (showOnlyOutOfStock) {
+                            refreshed.removeIf(p -> p.getStock() > 0);
+                        }
+                        products.setAll(refreshed);
+                        updateFilter.run();
+                        table.refresh();
+                    } catch (SQLException ex) {
+                        ex.printStackTrace(); // Or show error dialog
+                        PopUpDialog.showError("Database Error");
                     }
-                    products.setAll(refreshed);
-                    updateFilter.run();
-                    table.refresh();
                 });
             } else {
                 PopUpDialog.showError("Please select a product to edit.");

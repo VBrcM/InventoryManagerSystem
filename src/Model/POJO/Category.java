@@ -11,6 +11,7 @@ public class Category {
         this.categoryName = categoryName;
     }
 
+    // Getters and setters
     public int getCategoryId() {
         return categoryId;
     }

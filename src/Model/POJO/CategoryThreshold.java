@@ -2,31 +2,22 @@ package Model.POJO;
 
 public class CategoryThreshold {
     private int categoryId;
-    private String categoryName;
     private int threshold;
 
     public CategoryThreshold() {}
 
-    public CategoryThreshold(int categoryId, String categoryName, int threshold) {
+    public CategoryThreshold(int categoryId, int threshold) {
         this.categoryId = categoryId;
-        this.categoryName = categoryName;
         this.threshold = threshold;
     }
 
+    // Getters and setters
     public int getCategoryId() {
         return categoryId;
     }
 
     public void setCategoryId(int categoryId) {
         this.categoryId = categoryId;
-    }
-
-    public String getCategoryName() {
-        return categoryName;
-    }
-
-    public void setCategoryName(String categoryName) {
-        this.categoryName = categoryName;
     }
 
     public int getThreshold() {

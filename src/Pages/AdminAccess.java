@@ -1,6 +1,9 @@
 package Pages;
 
 import Pages.Layouts.AccessLayout;
+import Pages.Layouts.Admin.AdminDashboardLayout;
+import Pages.Layouts.Admin.AdminInventoryLayout;
+import Pages.Layouts.Admin.AdminReportsLayout;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -75,7 +78,7 @@ public class AdminAccess {
         // === Main Application Layout ===
         BorderPane layout = new BorderPane();
         layout.setLeft(navBar);
-        layout.setCenter(Pages.Layouts.AdminDashboardLayout.build(layout)); // Default view
+        layout.setCenter(AdminDashboardLayout.build(layout)); // Default view
         layout.setPrefSize(Double.MAX_VALUE, Double.MAX_VALUE);
         BorderPane.setAlignment(navBar, Pos.TOP_LEFT);
 
@@ -85,9 +88,9 @@ public class AdminAccess {
         AccessPage.root.getChildren().setAll(layout);
 
         // === Button Event Handlers ===
-        dashboardBtn.setOnAction(e -> layout.setCenter(Pages.Layouts.AdminDashboardLayout.build(layout)));
-        inventoryBtn.setOnAction(e -> layout.setCenter(Pages.Layouts.AdminInventoryLayout.build()));
-        reportsBtn.setOnAction(e -> layout.setCenter(Pages.Layouts.AdminReportsLayout.build(layout)));
+        dashboardBtn.setOnAction(e -> layout.setCenter(AdminDashboardLayout.build(layout)));
+        inventoryBtn.setOnAction(e -> layout.setCenter(AdminInventoryLayout.build()));
+        reportsBtn.setOnAction(e -> layout.setCenter(AdminReportsLayout.build(layout)));
         logoutBtn.setOnAction(e -> AccessLayout.show());
         exitBtn.setOnAction(e -> Platform.exit());
     }

@@ -1,158 +1,201 @@
-package Pages.Layouts;
+package Pages.Layouts.Admin;
 
-import Model.DAO.TransactionDAO;
-import Model.POJO.Transaction;
+
+import DB.Formatter;
+import Model.POJO.SaleItem;
+import Model.DAO.SaleItemDAO;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+
+
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-public class EmployeeTransactionLogLayout {
+
+public class AdminReportsLayout {
+
+
     private static int maxMonths = 1;
     private static int totalDaysLoaded = 0;
-    private static final int DAYS_PER_LOAD = 10;
+    private static final int DAYS_PER_SHOW_MORE = 10;
 
+
+    /**
+     * Builds the main layout for displaying daily sales reports.
+     */
     public static VBox build(BorderPane parentLayout) {
         totalDaysLoaded = 0;
-        System.out.println("[DEBUG] Building Transaction Log layout. maxMonths=" + maxMonths);
 
-        Label title = new Label("Transaction Log");
+
+        // ===== Title Label =====
+        Label title = new Label("Sales Reports");
         title.setId("title-label");
-        title.setPadding(new Insets(10, 0, 20, 0));
+        title.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: white;");
+        title.setPadding(new Insets(10, 0, 10, 0));
 
+
+        // ===== Filter Dropdown =====
         ComboBox<String> filterBox = new ComboBox<>();
         filterBox.getItems().addAll("Last 1 month", "Last 2 months", "Last 3 months");
         filterBox.setValue("Last 1 month");
         filterBox.getStyleClass().add("inventory-button");
+        filterBox.setPrefSize(140, 32);
 
+
+        // ===== Title + Filter Layout =====
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+
+        HBox titleSection = new HBox(10, title, spacer, filterBox);
+        titleSection.setAlignment(Pos.CENTER_LEFT);
+        titleSection.setPadding(new Insets(0, 0, 5, 0));
+
+
+        // ===== Day Summary Container =====
         VBox dayList = new VBox(15);
         dayList.setPadding(new Insets(10));
         dayList.setAlignment(Pos.TOP_CENTER);
 
+
+        // ===== Footer Box for "Show More" / No Records Message =====
         VBox footerBox = new VBox();
         footerBox.setAlignment(Pos.CENTER);
         dayList.getChildren().add(footerBox);
 
+
+        // ===== Filter Change Handler =====
         filterBox.setOnAction(e -> {
+            // System.out.println("Filter changed to: " + filterBox.getValue());
             totalDaysLoaded = 0;
             maxMonths = switch (filterBox.getValue()) {
-                case "Last 1 month" -> 1;
                 case "Last 2 months" -> 2;
                 case "Last 3 months" -> 3;
                 default -> 1;
             };
-            System.out.println("[DEBUG] Filter changed to: " + filterBox.getValue() + ", maxMonths set to " + maxMonths);
             dayList.getChildren().removeIf(node -> node != footerBox);
             footerBox.getChildren().clear();
             loadMoreDays(dayList, parentLayout, footerBox, Integer.MAX_VALUE, true);
         });
 
-        HBox filterBar = new HBox(filterBox);
-        filterBar.setAlignment(Pos.CENTER_RIGHT);
-        filterBar.setPadding(new Insets(0, 0, 10, 0));
 
+        // ===== Scrollable Content Area =====
         ScrollPane scrollPane = new ScrollPane(dayList);
         scrollPane.setFitToWidth(true);
-        scrollPane.setStyle("-fx-background: transparent;");
+        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
 
-        VBox root = new VBox(10, title, filterBar, scrollPane);
+
+        // ===== Root Layout =====
+        VBox root = new VBox(10, titleSection, scrollPane);
         root.setPadding(new Insets(30));
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
+
+        // ===== Initial Load =====
         loadMoreDays(dayList, parentLayout, footerBox, Integer.MAX_VALUE, true);
+
 
         return root;
     }
 
-    private static VBox createDaySummary(LocalDate date, DateTimeFormatter formatter, List<Transaction> logs, BorderPane layout) {
-        System.out.println("[DEBUG] Creating day summary for date: " + date + " with " + logs.size() + " transactions");
+
+    /**
+     * Creates a summary card for a specific day.
+     */
+    private static VBox createDaySummary(LocalDate date, DateTimeFormatter formatter, List<SaleItem> transactions, BorderPane layout) {
+        // ===== Date Label =====
         Label dateLabel = new Label("📅 " + date.format(formatter));
         dateLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: white;");
 
-        int total = logs.size();
-        Label totalLabel = new Label("Total Transactions: " + total);
+
+        // ===== Total Sales Calculation =====
+        double total = transactions.stream()
+                .mapToDouble(item -> item.getSiQty() * item.getSiPrice())
+                .sum();
+        Label totalLabel = new Label("Total Sales: " + Formatter.formatCurrency(total));
         totalLabel.setStyle("-fx-text-fill: #cccccc;");
 
+
+        // ===== View Button =====
         Button viewBtn = new Button("View Details");
-        viewBtn.setOnAction(e -> {
-            System.out.println("[DEBUG] View Details clicked for date: " + date);
-            layout.setCenter(EmployeeTransactionLogDetailsLayout.build(layout, date, logs));
-        });
         viewBtn.getStyleClass().add("inventory-button");
+        viewBtn.setOnAction(e -> layout.setCenter(AdminReportDetailsLayout.build(layout, date)));
+
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
+
         HBox header = new HBox(10, dateLabel, spacer, viewBtn);
         header.setAlignment(Pos.CENTER_LEFT);
 
+
         VBox card = new VBox(10, header, totalLabel);
         card.setPadding(new Insets(15));
+        card.setMaxWidth(Double.MAX_VALUE);
         card.setStyle("-fx-background-color: #2e2e2e; -fx-background-radius: 10;");
-
         return card;
     }
 
-    private static void loadMoreDays(VBox dayList, BorderPane layout, VBox footerBox, int daysToLoad, boolean respectLimit) {
-        System.out.println("[DEBUG] loadMoreDays called. totalDaysLoaded=" + totalDaysLoaded + ", daysToLoad=" + daysToLoad + ", respectLimit=" + respectLimit);
 
-        List<LocalDate> allDates = TransactionDAO.getAllTransactionDates();
-        System.out.println("[DEBUG] Retrieved " + allDates.size() + " total transaction dates from DB.");
-
+    /**
+     * Loads a batch of report cards, filtered by month and grouped by date.
+     */
+    private static void loadMoreDays(VBox dayList, BorderPane layout, VBox footerBox, int daysToLoad, boolean respectFilterLimit) {
+        List<LocalDate> allDates = SaleItemDAO.getAllTransactionDates();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM dd, yyyy");
         LocalDate today = LocalDate.now();
         LocalDate minDate = today.minusMonths(maxMonths);
-        System.out.println("[DEBUG] minDate cutoff is " + minDate);
+
 
         int added = 0;
         footerBox.getChildren().clear();
 
+
         for (int i = totalDaysLoaded; i < allDates.size() && added < daysToLoad; i++) {
             LocalDate date = allDates.get(i);
-            System.out.println("[DEBUG] Considering date: " + date);
+            if (respectFilterLimit && date.isBefore(minDate)) break;
 
-            if (respectLimit && date.isBefore(minDate)) {
-                System.out.println("[DEBUG] Date " + date + " is before minDate, stopping load.");
-                break;
+
+            List<SaleItem> transactions = null;
+            try {
+                transactions = SaleItemDAO.getSaleItemsByDate(date);
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
             }
-
-            List<Transaction> logs = TransactionDAO.getTransactionsByDate(date);
-            System.out.println("[DEBUG] Found " + logs.size() + " transactions on " + date);
-
-            if (!logs.isEmpty()) {
-                VBox card = createDaySummary(date, formatter, logs, layout);
-                dayList.getChildren().add(dayList.getChildren().size() - 1, card);
+            if (!transactions.isEmpty()) {
+                VBox dayCard = createDaySummary(date, formatter, transactions, layout);
+                dayList.getChildren().add(dayList.getChildren().size() - 1, dayCard);
                 added++;
                 totalDaysLoaded++;
-                System.out.println("[DEBUG] Added summary card for " + date + ". totalDaysLoaded now " + totalDaysLoaded);
             }
         }
 
+
         boolean moreAvailable = totalDaysLoaded < allDates.size();
-        System.out.println("[DEBUG] More available: " + moreAvailable);
+
 
         if (moreAvailable) {
             Button more = new Button("Show More");
             more.getStyleClass().add("inventory-button");
-            more.setOnAction(ev -> {
-                System.out.println("[DEBUG] Show More button clicked");
-                loadMoreDays(dayList, layout, footerBox, DAYS_PER_LOAD, false);
-            });
+            more.setOnAction(ev -> loadMoreDays(dayList, layout, footerBox, DAYS_PER_SHOW_MORE, false));
             footerBox.getChildren().add(more);
         } else {
-            Label done = new Label("No more transaction records available");
-            done.setStyle("-fx-text-fill: #888;");
+            Label done = new Label("No more sales records available");
+            done.setStyle("-fx-text-fill: #888; -fx-padding: 10 0 20 0;");
             footerBox.getChildren().add(done);
-            System.out.println("[DEBUG] No more transaction records available.");
         }
     }
 
+
+    /**
+     * Refreshes the report layout.
+     */
     public static void refresh(BorderPane parentLayout) {
-        System.out.println("[DEBUG] Refreshing transaction log layout");
         parentLayout.setCenter(build(parentLayout));
     }
 }
-
