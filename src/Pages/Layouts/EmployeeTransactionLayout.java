@@ -1,186 +1,114 @@
 package Pages.Layouts;
 
-import DB.*;
-import Dialogs.*;
-import Model.DAO.*;
-import Model.POJO.*;
+import Model.DAO.SaleDAO;
+import Model.DAO.SaleItemDAO;
+import Model.POJO.Sale;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.collections.transformation.FilteredList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class EmployeeTransactionLayout {
 
-    public static StackPane build() {
-        return build(false);  // Default: show all products
+    // =======================
+    // === MAIN BUILD METHOD ==
+    // =======================
+    public static VBox build() {
+        Label title = new Label("Today's Transactions");
+        title.setId("title-label");
+        title.setPadding(new Insets(10, 0, 20, 0));
+
+        Label dateLabel = new Label(LocalDate.now().format(DateTimeFormatter.ofPattern("MMMM dd, yyyy")));
+        dateLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #cccccc;");
+
+        TableView<Transaction> table = createTransactionTable();
+        loadTodaysTransactions(table);
+
+        VBox layout = new VBox(15, title, dateLabel, table);
+        layout.setPadding(new Insets(20));
+        layout.setAlignment(Pos.TOP_CENTER);
+        VBox.setVgrow(table, Priority.ALWAYS);
+
+        return layout;
     }
 
-    public static StackPane build(boolean showOnlyOutOfStock) {
-        Label title = new Label("Product Stock Transaction");
-        title.setId("title-label");
-
-        // Search bar
-        TextField searchField = new TextField();
-        searchField.setPromptText("Search product...");
-        searchField.getStyleClass().add("input-field");
-        searchField.setMaxWidth(200);
-
-        // Category filter
-        ComboBox<String> categoryFilter = new ComboBox<>();
-        categoryFilter.getItems().add("All Categories");
-        categoryFilter.getItems().addAll(new CategoryDAO().getAllCategoryNames());
-        categoryFilter.setValue("All Categories");
-        categoryFilter.getStyleClass().add("inventory-button");
-
-        // Spacer for alignment
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-
-        // Top bar: search left, category filter right
-        HBox topBar = new HBox(10, searchField, spacer, categoryFilter);
-        topBar.setAlignment(Pos.CENTER_LEFT);
-
-        // Table setup
-        TableView<Product> table = new TableView<>();
+    // =============================
+    // === TRANSACTION TABLE SETUP ==
+    // =============================
+    private static TableView<Transaction> createTransactionTable() {
+        TableView<Transaction> table = new TableView<>();
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         table.getStyleClass().add("table-view");
 
-        TableColumn<Product, String> nameCol = new TableColumn<>("Product");
-        nameCol.setCellValueFactory(new PropertyValueFactory<>("product"));
+        TableColumn<Transaction, String> timeCol = new TableColumn<>("Time");
+        timeCol.setCellValueFactory(new PropertyValueFactory<>("time"));
+        timeCol.setPrefWidth(100);
 
-        TableColumn<Product, String> categoryCol = new TableColumn<>("Category");
-        categoryCol.setCellValueFactory(new PropertyValueFactory<>("categoryName"));
+        TableColumn<Transaction, String> itemsCol = new TableColumn<>("Items");
+        itemsCol.setCellValueFactory(new PropertyValueFactory<>("itemsSummary"));
+        itemsCol.setPrefWidth(200);
 
-        TableColumn<Product, Integer> stockCol = new TableColumn<>("Quantity");
-        stockCol.setCellValueFactory(new PropertyValueFactory<>("stock"));
-        stockCol.setCellFactory(col -> new TableCell<>() {
-            @Override
-            protected void updateItem(Integer item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(String.format("%,d", item));
-                }
-            }
-        });
+        TableColumn<Transaction, Double> totalCol = new TableColumn<>("Total");
+        totalCol.setCellValueFactory(new PropertyValueFactory<>("total"));
+        totalCol.setPrefWidth(100);
 
-        TableColumn<Product, Double> priceCol = new TableColumn<>("Price");
-        priceCol.setCellValueFactory(new PropertyValueFactory<>("price"));
-        priceCol.setCellFactory(col -> new TableCell<>() {
-            @Override
-            protected void updateItem(Double item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(Formatter.formatCurrency(item));
-                }
-            }
-        });
+        table.getColumns().addAll(timeCol, itemsCol, totalCol);
 
-        table.getColumns().addAll(nameCol, categoryCol, priceCol, stockCol);
-        VBox.setVgrow(table, Priority.ALWAYS);
+        return table;
+    }
 
-        // Product data
-        ProductDAO dao = new ProductDAO();
-        List<Product> productList = dao.getAllWithCategory();
+    // ====================================
+    // === LOAD TRANSACTIONS FROM DATABASE
+    // ====================================
+    private static void loadTodaysTransactions(TableView<Transaction> table) {
+        ObservableList<Transaction> transactions = FXCollections.observableArrayList();
+        List<Sale> sales = SaleDAO.getSalesByDate(LocalDate.now());
 
-        if (showOnlyOutOfStock) {
-            productList.removeIf(p -> p.getStock() > 0);
+        for (Sale sale : sales) {
+            String items = SaleItemDAO.getItemSummaryBySaleId(sale.getId());
+            String time = sale.getDateTime() != null
+                    ? sale.getDateTime().format(DateTimeFormatter.ofPattern("hh:mm a"))
+                    : "N/A";
+
+            Transaction tx = new Transaction(time, items, sale.getTotalAmount());
+            transactions.add(tx);
         }
 
-        ObservableList<Product> products = FXCollections.observableArrayList(productList);
-        FilteredList<Product> filteredList = new FilteredList<>(products, p -> true);
-        table.setItems(filteredList);
+        table.setItems(transactions);
+    }
 
-        // Filter logic (search + category)
-        Runnable applyFilters = () -> {
-            String keyword = searchField.getText().toLowerCase();
-            String selectedCategory = categoryFilter.getValue();
+    // =================================
+    // === INTERNAL DISPLAY MODEL CLASS
+    // =================================
+    public static class Transaction {
+        private final String time;
+        private final String itemsSummary;
+        private final double total;
 
-            filteredList.setPredicate(p -> {
-                String name = p.getProductName() != null ? p.getProductName().toLowerCase() : "";
-                String category = p.getCategoryName() != null ? p.getCategoryName().toLowerCase() : "";
-                boolean matchesSearch = name.contains(keyword) || category.contains(keyword);
-                boolean matchesCategory = selectedCategory.equals("All Categories") ||
-                        category.equalsIgnoreCase(selectedCategory);
-                return matchesSearch && matchesCategory;
-            });
-        };
+        public Transaction(String time, String itemsSummary, double total) {
+            this.time = time;
+            this.itemsSummary = itemsSummary;
+            this.total = total;
+        }
 
-        searchField.textProperty().addListener((obs, oldVal, newVal) -> applyFilters.run());
-        categoryFilter.setOnAction(e -> applyFilters.run());
+        public String getTime() {
+            return time;
+        }
 
-        // Action buttons
-        Button addBtn = new Button("Add Stock");
-        Button reduceBtn = new Button("Reduce Stock");
+        public String getItemsSummary() {
+            return itemsSummary;
+        }
 
-        addBtn.getStyleClass().add("inventory-button");
-        reduceBtn.getStyleClass().add("inventory-button");
-
-        HBox actionButtons = new HBox(20, addBtn, reduceBtn);
-        actionButtons.setAlignment(Pos.CENTER);
-        actionButtons.setPadding(new Insets(20, 0, 0, 0));
-
-        VBox content = new VBox(20, title, topBar, table, actionButtons);
-        content.setAlignment(Pos.TOP_CENTER);
-        content.setPadding(new Insets(30));
-        content.setStyle("-fx-background-color: #1e1e1e;");
-
-        StackPane root = new StackPane(content);
-
-        // Button handlers
-        addBtn.setOnAction(e -> {
-            Product selected = table.getSelectionModel().getSelectedItem();
-            if (selected != null) {
-                TransactionDialog.show("add", selected, (qty)-> {
-                    try {
-                        List<Product> refreshed = dao.getAllWithCategory();
-                        if (showOnlyOutOfStock) {
-                            refreshed.removeIf(p -> p.getStock() > 0);
-                        }
-                        products.setAll(refreshed);
-                        filteredList.setPredicate(filteredList.getPredicate());
-                        table.refresh();
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                        PopUpDialog.showError("Failed to refresh inventory.");
-                    }
-                });
-            } else {
-                PopUpDialog.showError("Please select a product to add stock.");
-            }
-        });
-
-        reduceBtn.setOnAction(e -> {
-            Product selected = table.getSelectionModel().getSelectedItem();
-            if (selected != null) {
-                TransactionDialog.show("reduce", selected, (qty) -> {
-                    try {
-                        List<Product> refreshed = dao.getAllWithCategory();
-                        if (showOnlyOutOfStock) {
-                            refreshed.removeIf(p -> p.getStock() > 0);
-                        }
-                        products.setAll(refreshed);
-                        filteredList.setPredicate(filteredList.getPredicate());
-                        table.refresh();
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                        PopUpDialog.showError("Failed to refresh inventory.");
-                    }
-                });
-            } else {
-                PopUpDialog.showError("Please select a product to reduce stock.");
-            }
-        });
-
-        return root;
+        public double getTotal() {
+            return total;
+        }
     }
 }

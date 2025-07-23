@@ -104,9 +104,9 @@ public class TransactionDialog {
                     SaleItem item = new SaleItem();
                     item.setSaleId(saleId);
                     item.setProductId(selectedProduct.getProductId());
-                    item.setQuantity(quantity);
-                    item.setPrice(selectedProduct.getProductPrice());
-                    item.setSiDate(LocalDate.now().toString());
+                    item.setSiQty(quantity);
+                    item.setSiPrice(selectedProduct.getProductPrice());
+                    item.setSiDate(LocalDate.now());
 
                     boolean itemSuccess = SaleItemDAO.insertSaleItem(item);
                     if (!itemSuccess) {

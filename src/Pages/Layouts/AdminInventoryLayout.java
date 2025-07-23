@@ -25,6 +25,10 @@ public class AdminInventoryLayout {
     public static StackPane build(boolean showOnlyOutOfStock) {
         Label title = new Label("Inventory");
         title.setId("title-label");
+        title.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: white;");
+        title.setPadding(new Insets(10, 0, 10, 0));
+        title.setAlignment(Pos.CENTER);
+        title.setMaxWidth(Double.MAX_VALUE);
 
         TextField searchField = new TextField();
         searchField.setPromptText("Search items...");
@@ -32,7 +36,7 @@ public class AdminInventoryLayout {
 
         // ProductDAO to fetch data
         ProductDAO dao = new ProductDAO();
-        List<Product> productList = dao.getAllWithCategory();
+        List<Product> productList = dao.getAll();
 
         if (showOnlyOutOfStock) {
             productList.removeIf(p -> p.getStock() > 0);
@@ -50,10 +54,19 @@ public class AdminInventoryLayout {
         categoryFilter.getItems().addAll(categories);
         categoryFilter.setValue("All Categories");
         categoryFilter.getStyleClass().add("inventory-button");
+        categoryFilter.setPrefWidth(200);
+        categoryFilter.setPrefHeight(38);
 
         // Put searchField and categoryFilter side-by-side
-        HBox filtersBox = new HBox(10, searchField, categoryFilter);
+        HBox filtersBox = new HBox(10);
         filtersBox.setAlignment(Pos.CENTER_LEFT);
+        filtersBox.setPadding(new Insets(10, 0, 10, 0));
+
+        HBox.setHgrow(searchField, Priority.ALWAYS);
+        searchField.setMaxWidth(Double.MAX_VALUE);
+
+
+        filtersBox.getChildren().addAll(searchField, categoryFilter);
 
         TableView<Product> table = new TableView<>();
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
@@ -96,6 +109,7 @@ public class AdminInventoryLayout {
         table.getColumns().addAll(nameCol, categoryCol, quantityCol, priceCol);
         VBox.setVgrow(table, Priority.ALWAYS);
 
+
         ObservableList<Product> products = FXCollections.observableArrayList(productList);
         FilteredList<Product> filteredList = new FilteredList<>(products, p -> true);
 
@@ -131,13 +145,21 @@ public class AdminInventoryLayout {
         editBtn.getStyleClass().add("inventory-button");
         deleteBtn.getStyleClass().add("inventory-button");
 
+        addBtn.setPrefHeight(60);
+        editBtn.setPrefHeight(60);
+        deleteBtn.setPrefHeight(60);
+
+        addBtn.setPrefWidth(200);
+        editBtn.setPrefWidth(200);
+        deleteBtn.setPrefWidth(200);
+
         HBox actionButtons = new HBox(20, addBtn, editBtn, deleteBtn);
         actionButtons.setAlignment(Pos.CENTER);
         actionButtons.setPadding(new Insets(20, 0, 0, 0));
 
-        VBox content = new VBox(20, title, filtersBox, table, actionButtons);
+        VBox content = new VBox(10, title, filtersBox, table, actionButtons);
         content.setAlignment(Pos.TOP_CENTER);
-        content.setPadding(new Insets(30));
+        content.setPadding(new Insets(20, 20, 20, 20));
         content.setStyle("-fx-background-color: #1e1e1e;");
 
         StackPane root = new StackPane(content);
@@ -151,7 +173,7 @@ public class AdminInventoryLayout {
             Product selectedProduct = table.getSelectionModel().getSelectedItem();
             if (selectedProduct != null) {
                 InventoryDialog.show(selectedProduct, products, () -> {
-                    List<Product> refreshedProducts = dao.getAllWithCategory();
+                    List<Product> refreshedProducts = dao.getAll();
 
                     if (showOnlyOutOfStock) {
                         refreshedProducts.removeIf(p -> p.getStock() > 0);

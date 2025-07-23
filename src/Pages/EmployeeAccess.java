@@ -1,6 +1,5 @@
 package Pages;
 
-
 import Pages.Layouts.*;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -13,43 +12,63 @@ public class EmployeeAccess {
     private static BorderPane layout;
     private static Stage currentStage;
 
+    /**
+     * Returns the main layout pane for the employee view.
+     */
+    public static BorderPane getLayout() {
+        return layout;
+    }
+
+    /**
+     * Initializes and displays the employee access screen.
+     *
+     * @param stage The primary stage to display the layout on
+     */
     public static void show(Stage stage) {
         currentStage = stage;
         layout = new BorderPane();
 
-        // Setup navigation and initial view
+        // Setup the navigation bar and default center view
         setupNavBar();
         showDashboard();
 
-        // Apply to stage
+        // Apply layout to root
         StackPane root = (StackPane) stage.getScene().getRoot();
         root.getChildren().setAll(layout);
     }
 
+    /**
+     * Sets up the left-hand navigation bar for employee actions.
+     */
     private static void setupNavBar() {
         VBox navBar = new VBox(20);
         navBar.getStyleClass().add("navbar");
         navBar.setAlignment(Pos.TOP_CENTER);
         navBar.setPadding(new Insets(10, 20, 10, 20));
+        navBar.setPrefWidth(320); // Fixed width consistent with AdminAccess
+        navBar.setMaxHeight(Double.MAX_VALUE);
+        VBox.setVgrow(navBar, Priority.ALWAYS);
 
-        // Title
+        // Title section ("Employee Portal")
         Label title1 = new Label("Employee");
         Label title2 = new Label("Portal");
         title1.getStyleClass().add("navbar-title-line");
         title2.getStyleClass().add("navbar-title-line");
+
         VBox titleBox = new VBox(title1, title2);
         titleBox.setAlignment(Pos.CENTER);
+        titleBox.setSpacing(4);
 
-        // Navigation Buttons
-        Button dashboardBtn = createNavButton("Dashboard", "📊", () -> showDashboard());
-        Button salesBtn = createNavButton("New Sale", "💰", () -> showSales());
-        Button inventoryBtn = createNavButton("Inventory", "📦", () -> showInventory());
-        Button transactionsBtn = createNavButton("Today's Transactions", "📈", () -> showTransactions());
-        Button transactionsLogBtn = createNavButton("Transaction Log", "📈", () -> showTransactions());
-        Button logoutBtn = createNavButton("Logout", "🔒", () -> AccessLayout.show());
+        // Navigation buttons
+        Button dashboardBtn = createNavButton("Dashboard", "📊", EmployeeAccess::showDashboard);
+        Button salesBtn = createNavButton("New Sale", "💰", EmployeeAccess::showSales);
+        Button inventoryBtn = createNavButton("Inventory", "📦", EmployeeAccess::showInventory);
+        Button transactionsBtn = createNavButton("Today's Transactions", "📈", EmployeeAccess::showTransactions);
+        Button transactionsLogBtn = createNavButton("Transaction Log", "📈", EmployeeAccess::showTransactionsLogs);
+        Button logoutBtn = createNavButton("Logout", "🔒", AccessLayout::show);
         Button exitBtn = createNavButton("Exit", "🚪", () -> System.exit(0));
 
-        // Layout
+        // Grouping navigation buttons
         VBox topButtons = new VBox(15,
                 wrap(dashboardBtn),
                 wrap(salesBtn),
@@ -66,15 +85,15 @@ public class EmployeeAccess {
         Region spacer = new Region();
         VBox.setVgrow(spacer, Priority.ALWAYS);
 
+        // Assemble navbar
         navBar.getChildren().addAll(titleBox, topButtons, spacer, bottomButtons);
         layout.setLeft(navBar);
     }
 
-    // View Controllers
+    // === View Setters ===
+
     private static void showDashboard() {
-        VBox dashboard = EmployeeDashboardLayout.build();
-        layout.setCenter(dashboard);
-        loadDashboardData(dashboard);
+        layout.setCenter(EmployeeDashboardLayout.build());
     }
 
     private static void showSales() {
@@ -86,55 +105,52 @@ public class EmployeeAccess {
     }
 
     private static void showTransactions() {
-        layout.setCenter(EmployeeTransactionsLayout.build());
+        layout.setCenter(EmployeeTransactionLayout.build());
     }
+
     private static void showTransactionsLogs() {
         layout.setCenter(EmployeeTransactionLogLayout.build(layout));
     }
 
-    // Data Loading
-    private static void loadDashboardData(VBox dashboard) {
-        try {
-            HBox statsRow = (HBox) dashboard.getChildren().get(2);
-            VBox salesBox = (VBox) statsRow.getChildren().get(0);
-            VBox transactionsBox = (VBox) statsRow.getChildren().get(1);
-            VBox popularItemBox = (VBox) statsRow.getChildren().get(2);
-            VBox lowStockBox = (VBox) statsRow.getChildren().get(3);
-            VBox transactionsList = (VBox) dashboard.lookup("#transactionsList");
+    // === UI Helpers ===
 
-            // Mock data - replace with database calls
-            ((Label) salesBox.getChildren().get(0)).setText("₱1,245.50");
-            ((Label) transactionsBox.getChildren().get(0)).setText("18");
-            ((Label) popularItemBox.getChildren().get(0)).setText("Blue Pens");
-            ((Label) lowStockBox.getChildren().get(0)).setText("2 items");
-
-            if (transactionsList != null) {
-                transactionsList.getChildren().clear();
-                addTransactionItem(transactionsList, "09:30 AM", "₱250.00", "Notebook (2), Pens (3)");
-                addTransactionItem(transactionsList, "10:45 AM", "₱180.50", "Binder (1), Paper (5)");
-                addTransactionItem(transactionsList, "11:15 AM", "₱75.25", "Pencils (10), Erasers (2)");
-            }
-        } catch (Exception e) {
-            System.err.println("Error loading dashboard data: " + e.getMessage());
-        }
-    }
-
-    // UI Components
+    /**
+     * Creates a styled navigation button with an icon and label.
+     *
+     * @param text   The button label
+     * @param icon   A string-based icon (e.g., emoji)
+     * @param action The action to execute on click
+     * @return Configured Button instance
+     */
     private static Button createNavButton(String text, String icon, Runnable action) {
         Button btn = new Button(icon + "  " + text);
         btn.getStyleClass().add("nav-button");
         btn.setPrefHeight(50);
-        btn.setPrefWidth(280);
+        btn.setPrefWidth(280); // Consistent width
         btn.setOnAction(e -> action.run());
         return btn;
     }
 
+    /**
+     * Wraps a button in a centered HBox for alignment inside VBox.
+     *
+     * @param button The button to wrap
+     * @return HBox containing the button
+     */
     private static HBox wrap(Button button) {
         HBox wrapper = new HBox(button);
         wrapper.setAlignment(Pos.CENTER);
         return wrapper;
     }
 
+    /**
+     * Adds a styled transaction item row (used inside dashboard widgets).
+     *
+     * @param container The container to add the row to
+     * @param time      Timestamp label
+     * @param amount    Transaction amount
+     * @param items     Description or item list
+     */
     private static void addTransactionItem(VBox container, String time, String amount, String items) {
         HBox item = new HBox(15);
         item.setAlignment(Pos.CENTER_LEFT);
@@ -156,13 +172,17 @@ public class EmployeeAccess {
         container.getChildren().add(item);
     }
 
-    // Helper for quick actions in dashboard
+    /**
+     * Allows external dashboard shortcuts to navigate to specific views.
+     *
+     * @param view String identifier for the view
+     */
     public static void navigateTo(String view) {
-        switch (view) {
+        switch (view.toLowerCase()) {
             case "sales": showSales(); break;
             case "inventory": showInventory(); break;
             case "transactions": showTransactions(); break;
-            case "transaction log": showTransactions(); break;
+            case "transaction log": showTransactionsLogs(); break;
             default: showDashboard();
         }
     }

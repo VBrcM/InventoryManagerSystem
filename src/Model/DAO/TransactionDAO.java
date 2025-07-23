@@ -6,7 +6,9 @@ import Model.POJO.Transaction;
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -169,6 +171,119 @@ public class TransactionDAO {
         } catch (SQLException e) {
             System.err.printf("Error fetching transactions on %s: %s%n", date, e.getMessage());
             e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    public static int getTodaySalesTotal() {
+        String sql = """
+        SELECT SUM(t_qty) FROM transaction
+        WHERE t_type = 'add' AND t_date = ?
+    """;
+        try (Connection conn = JDBC.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setDate(1, Date.valueOf(LocalDate.now()));
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Error getting today's sales total: {0}", e.getMessage());
+        }
+        return 0;
+    }
+    public static int getLowStockCount() {
+        String sql = "SELECT COUNT(*) FROM product WHERE stock <= 5";
+        try (Connection conn = JDBC.connect();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Error getting low stock count: {0}", e.getMessage());
+        }
+        return 0;
+    }
+    public static Map<String, Integer> getTodayTransactionSummaryByProduct() {
+        Map<String, Integer> summary = new LinkedHashMap<>();
+        String sql = """
+        SELECT p.product_name, SUM(t.t_qty) AS total_qty
+        FROM transaction t
+        JOIN product p ON t.product_id = p.product_id
+        WHERE t.t_date = ?
+        GROUP BY p.product_name
+        ORDER BY total_qty DESC
+        LIMIT 5
+    """;
+
+        try (Connection conn = JDBC.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setDate(1, Date.valueOf(LocalDate.now()));
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    summary.put(rs.getString("product_name"), rs.getInt("total_qty"));
+                }
+            }
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Error getting today's product summary: {0}", e.getMessage());
+        }
+
+        return summary;
+    }
+    public static Map<String, Integer> getWeeklyTransactionSummaryByProduct() {
+        Map<String, Integer> summary = new LinkedHashMap<>();
+        String sql = """
+        SELECT p.product_name, SUM(t.t_qty) AS total_qty
+        FROM transaction t
+        JOIN product p ON t.product_id = p.product_id
+        WHERE t.t_date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+        GROUP BY p.product_name
+        ORDER BY total_qty DESC
+        LIMIT 5
+    """;
+
+        try (Connection conn = JDBC.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                summary.put(rs.getString("product_name"), rs.getInt("total_qty"));
+            }
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Error getting weekly product summary: {0}", e.getMessage());
+        }
+
+        return summary;
+    }
+
+    public static List<Transaction> getRecentTransactions() {
+        List<Transaction> list = new ArrayList<>();
+
+        String sql = """
+        SELECT 
+            DATE_FORMAT(t.t_date, '%h:%i %p') AS txn_time,
+            SUM(p.product_price * t.t_qty) AS total_price,
+            GROUP_CONCAT(CONCAT(p.product_name, '(', t.t_qty, ')') SEPARATOR ' ') AS products
+        FROM transaction t
+        JOIN product p ON t.product_id = p.product_id
+        WHERE DATE(t.t_date) = CURDATE()
+        GROUP BY txn_time
+        ORDER BY MAX(t.t_date) DESC
+    """;
+
+        try (Connection conn = JDBC.connect();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                Transaction txn = new Transaction();
+                txn.setFormattedTime(rs.getString("txn_time")); // reuse formattedTime
+                txn.setAmount(rs.getDouble("total_price"));
+                txn.setDescription(rs.getString("products"));   // reuse description
+                list.add(txn);
+            }
+
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Error retrieving grouped recent transactions: {0}", e.getMessage());
         }
 
         return list;

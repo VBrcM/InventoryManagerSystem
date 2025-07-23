@@ -12,61 +12,79 @@ import javafx.stage.Stage;
 public class AdminAccess {
 
     public static void show(Stage stage) {
-        // Navigation Bar
+        // === Navigation Bar (Left Panel) ===
         VBox navBar = new VBox(20);
         navBar.getStyleClass().add("navbar");
         navBar.setAlignment(Pos.TOP_CENTER);
         navBar.setPadding(new Insets(10, 20, 10, 20));
+        navBar.setPrefWidth(320); // Fixed width to match EmployeeAccess
         navBar.setMaxHeight(Double.MAX_VALUE);
         VBox.setVgrow(navBar, Priority.ALWAYS);
 
-        // Title
-        Label title1 = new Label("Inventory");
-        Label title2 = new Label("Manager");
+        // === Title Section ===
+        Label title1 = new Label("Admin");
+        Label title2 = new Label("Portal");
         title1.getStyleClass().add("navbar-title-line");
         title2.getStyleClass().add("navbar-title-line");
+
         VBox titleBox = new VBox(title1, title2);
         titleBox.setAlignment(Pos.CENTER);
         titleBox.setSpacing(4);
 
-        // Navigation Buttons
+        // === Navigation Buttons ===
         Button dashboardBtn = makeNavButton("Dashboard", "📊");
         Button inventoryBtn = makeNavButton("Inventory", "📦");
         Button reportsBtn = makeNavButton("Sales Reports", "📈");
         Button logoutBtn = makeNavButton("Logout", "🔒");
         Button exitBtn = makeNavButton("Exit", "🚪");
 
-        VBox topButtons = new VBox(15, wrap(dashboardBtn), wrap(inventoryBtn));
+        // === Button Layouts ===
+        // Top Section Buttons
+        VBox topButtons = new VBox(15,
+                wrap(dashboardBtn),
+                wrap(inventoryBtn)
+        );
         topButtons.setAlignment(Pos.TOP_CENTER);
 
+        // Right-aligned Reports Button
         HBox reportsRow = new HBox(wrap(reportsBtn));
         reportsRow.setAlignment(Pos.CENTER_RIGHT);
 
         VBox topButtonBox = new VBox(15, topButtons, reportsRow);
         topButtonBox.setAlignment(Pos.TOP_CENTER);
 
-        VBox bottomButtonBox = new VBox(15, wrap(logoutBtn), wrap(exitBtn));
+        // Bottom Section Buttons (Logout, Exit)
+        VBox bottomButtonBox = new VBox(15,
+                wrap(logoutBtn),
+                wrap(exitBtn)
+        );
         bottomButtonBox.setAlignment(Pos.BOTTOM_CENTER);
 
+        // Spacer to push bottom buttons downward
         Region spacer = new Region();
         VBox.setVgrow(spacer, Priority.ALWAYS);
 
-        navBar.getChildren().addAll(titleBox, topButtonBox, spacer, bottomButtonBox);
+        // === Assemble Navbar ===
+        navBar.getChildren().addAll(
+                titleBox,
+                topButtonBox,
+                spacer,
+                bottomButtonBox
+        );
 
-        // Main Layout
+        // === Main Application Layout ===
         BorderPane layout = new BorderPane();
         layout.setLeft(navBar);
-        layout.setCenter(Pages.Layouts.AdminDashboardLayout.build(layout));
+        layout.setCenter(Pages.Layouts.AdminDashboardLayout.build(layout)); // Default view
         layout.setPrefSize(Double.MAX_VALUE, Double.MAX_VALUE);
+        BorderPane.setAlignment(navBar, Pos.TOP_LEFT);
 
-        layout.widthProperty().addListener((obs, oldVal, newVal) -> {
-            navBar.setPrefWidth(newVal.doubleValue() * 0.16);
-        });
-
+        // === Add to Root StackPane ===
         StackPane.setAlignment(layout, Pos.CENTER);
+        StackPane.setMargin(layout, Insets.EMPTY);
         AccessPage.root.getChildren().setAll(layout);
 
-        // Button Actions
+        // === Button Event Handlers ===
         dashboardBtn.setOnAction(e -> layout.setCenter(Pages.Layouts.AdminDashboardLayout.build(layout)));
         inventoryBtn.setOnAction(e -> layout.setCenter(Pages.Layouts.AdminInventoryLayout.build()));
         reportsBtn.setOnAction(e -> layout.setCenter(Pages.Layouts.AdminReportsLayout.build(layout)));
@@ -74,14 +92,27 @@ public class AdminAccess {
         exitBtn.setOnAction(e -> Platform.exit());
     }
 
+    /**
+     * Creates a styled navigation button with icon and text.
+     *
+     * @param text Display text for the button
+     * @param icon Emoji or symbolic icon prefix
+     * @return Configured Button instance
+     */
     private static Button makeNavButton(String text, String icon) {
         Button btn = new Button(icon + "  " + text);
         btn.getStyleClass().add("nav-button");
         btn.setPrefHeight(50);
-        btn.setPrefWidth(280);
+        btn.setPrefWidth(280); // Consistent with EmployeeAccess layout
         return btn;
     }
 
+    /**
+     * Wraps a button in a centered HBox for layout alignment.
+     *
+     * @param button Button to wrap
+     * @return HBox containing the button
+     */
     private static HBox wrap(Button button) {
         HBox wrapper = new HBox(button);
         wrapper.setAlignment(Pos.CENTER);

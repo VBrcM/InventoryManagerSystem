@@ -1,9 +1,12 @@
 package Model.DAO;
 
 import DB.JDBC;
+import Model.POJO.Sale;
 
 import java.sql.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -16,8 +19,8 @@ public class SaleDAO {
     /**
      * Inserts a sale with date, quantity, and total amount.
      *
-     * @param saleQty      total quantity of items in the sale
-     * @param totalAmount  total amount of the sale
+     * @param saleQty     total quantity of items in the sale
+     * @param totalAmount total amount of the sale
      * @return generated sale ID
      * @throws SQLException if insertion fails
      */
@@ -108,5 +111,45 @@ public class SaleDAO {
             LOGGER.log(Level.SEVERE, String.format("Error updating totals for sale ID %d: %s", saleId, e.getMessage()));
             throw e;
         }
+    }
+
+    public static int insertSale(double totalAmount) {
+        String sql = "INSERT INTO sale (sale_date, total_amount) VALUES (NOW(), ?)";
+        try (Connection conn = JDBC.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            stmt.setDouble(1, totalAmount);
+            stmt.executeUpdate();
+            ResultSet rs = stmt.getGeneratedKeys();
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    public static List<Sale> getSalesByDate(LocalDate date) {
+        List<Sale> sales = new ArrayList<>();
+        String sql = "SELECT * FROM sale WHERE sale_date = ? ORDER BY sale_id DESC";
+
+        try (Connection conn = JDBC.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setDate(1, Date.valueOf(date));
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                Sale sale = new Sale();
+                sale.setId(rs.getInt("sale_id"));
+                sale.setSaleDate(rs.getDate("sale_date").toLocalDate());
+                sale.setSaleQty(rs.getInt("sale_qty"));
+                sale.setTotalAmount(rs.getDouble("total_amount"));
+                sales.add(sale);
+            }
+
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error fetching sales for date: " + date, e);
+        }
+
+        return sales;
     }
 }

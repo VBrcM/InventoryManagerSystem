@@ -1,181 +1,259 @@
 package Pages.Layouts;
 
+import DB.Formatter;
+import Model.DAO.ProductDAO;
+import Model.DAO.TransactionDAO;
+import Model.POJO.Transaction;
+import Pages.EmployeeAccess;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.geometry.Side;
 import javafx.scene.Node;
 import javafx.scene.chart.*;
 import javafx.scene.control.Label;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import java.util.List;
+import java.util.Map;
 
 public class EmployeeDashboardLayout {
 
-    // ==========================
-    // Main Layout Builder
-    // ==========================
+    // Main builder for the Employee Dashboard layout
     public static VBox build() {
+        // ===== Dashboard Title =====
         Label title = new Label("Employee Dashboard");
         title.setId("title-label");
         title.setPadding(new Insets(10, 0, 10, 0));
 
         Label dateLabel = new Label(java.time.LocalDate.now()
                 .format(java.time.format.DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy")));
-        dateLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #cccccc;");
+        dateLabel.getStyleClass().add("date-label");
 
-        VBox todaysSales = createStatBox("Today's Sales", "₱0", Color.web("#4CAF50"));
-        VBox transactions = createStatBox("Transactions", "0", Color.web("#2196F3"));
-        VBox lowStock = createStatBox("Low Stock", "3 items", Color.web("#F44336"));
+        // ===== Stat Boxes =====
+        VBox todaysSales = createStatBox(
+                "Today's Sales",
+                Formatter.formatCurrency(TransactionDAO.getTodaySalesTotal()),
+                Color.web("#4CAF50"),
+                () -> EmployeeAccess.getLayout().setCenter(EmployeeSalesLayout.build(EmployeeAccess.getLayout()))
+        );
+
+        VBox transactions = createStatBox(
+                "Transactions",
+                String.valueOf(TransactionDAO.getTodayCount()),
+                Color.web("#2196F3"),
+                () -> EmployeeAccess.getLayout().setCenter(EmployeeTransactionLayout.build())
+        );
+
+        VBox lowStock = createStatBox(
+                "Low Stock",
+                TransactionDAO.getLowStockCount() + " items",
+                Color.web("#F44336"),
+                () -> EmployeeAccess.getLayout().setCenter(EmployeeInventoryLayout.build())
+        );
 
         HBox statsRow = new HBox(20, todaysSales, transactions, lowStock);
         statsRow.setAlignment(Pos.CENTER);
-        statsRow.setPadding(new Insets(20));
-        statsRow.setMaxWidth(Double.MAX_VALUE);
+        statsRow.setPadding(new Insets(10, 0, 10, 0));
         HBox.setHgrow(todaysSales, Priority.ALWAYS);
         HBox.setHgrow(transactions, Priority.ALWAYS);
         HBox.setHgrow(lowStock, Priority.ALWAYS);
 
         VBox pieChartContainer = new VBox(createPieChart());
-        pieChartContainer.setPadding(new Insets(10));
-        pieChartContainer.setStyle("-fx-background-color: #2e2e2e; -fx-background-radius: 10;");
+        pieChartContainer.getStyleClass().add("chart-container");
         VBox.setVgrow(pieChartContainer, Priority.ALWAYS);
 
         VBox barChartContainer = new VBox(createBarChart());
-        barChartContainer.setPadding(new Insets(10));
-        barChartContainer.setStyle("-fx-background-color: #2e2e2e; -fx-background-radius: 10;");
+        barChartContainer.getStyleClass().add("chart-container");
         VBox.setVgrow(barChartContainer, Priority.ALWAYS);
 
         VBox leftColumn = new VBox(10, pieChartContainer, barChartContainer);
-        leftColumn.setPadding(new Insets(0));
         VBox.setVgrow(leftColumn, Priority.ALWAYS);
 
         Label recentTitle = new Label("Recent Transactions");
-        recentTitle.setStyle("-fx-font-size: 16px; -fx-text-fill: white;");
+        recentTitle.getStyleClass().add("recent-title");
 
         VBox transactionsList = createTransactionsList();
         VBox rightColumn = new VBox(10, recentTitle, transactionsList);
-        rightColumn.setPadding(new Insets(10));
-        rightColumn.setStyle("-fx-background-color: #2e2e2e; -fx-background-radius: 10;");
+        rightColumn.getStyleClass().add("chart-container");
         VBox.setVgrow(rightColumn, Priority.ALWAYS);
 
         HBox splitRow = new HBox(20, leftColumn, rightColumn);
         splitRow.setAlignment(Pos.CENTER);
-        splitRow.setPadding(new Insets(10, 0, 0, 0));
-        splitRow.setMaxWidth(Double.MAX_VALUE);
-        splitRow.setMinHeight(500);
+        splitRow.setPadding(new Insets(5, 0, 0, 0));        splitRow.setMinHeight(500);
         HBox.setHgrow(leftColumn, Priority.ALWAYS);
         HBox.setHgrow(rightColumn, Priority.ALWAYS);
 
-        VBox layout = new VBox(20, title, dateLabel, statsRow, splitRow);
+        VBox layout = new VBox(10, title, dateLabel, statsRow, splitRow);
         layout.setPadding(new Insets(20));
         layout.setAlignment(Pos.TOP_CENTER);
         layout.setStyle("-fx-background-color: #1e1e1e;");
         return layout;
     }
 
-    // ==========================
-    // Stat Box
-    // ==========================
-    private static VBox createStatBox(String labelText, String valueText, Color accentColor) {
+    private static VBox createStatBox(String labelText, String valueText, Color accentColor, Runnable onClick) {
         Label value = new Label(valueText);
-        value.setStyle(String.format(
-                "-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: %s;",
-                toHexColor(accentColor)
-        ));
+        value.getStyleClass().add("stat-value");
+        value.setStyle(String.format("-fx-text-fill: %s;", toHexColor(accentColor)));
 
         Label label = new Label(labelText);
-        label.setStyle("-fx-font-size: 14px; -fx-text-fill: #cccccc;");
+        label.getStyleClass().add("stat-label");
 
         VBox box = new VBox(5, value, label);
         box.setAlignment(Pos.CENTER);
-        box.setPadding(new Insets(20));
-        box.setStyle("-fx-background-color: #2e2e2e; -fx-background-radius: 10;");
+        box.getStyleClass().add("stat-box");
         box.setMaxWidth(Double.MAX_VALUE);
+
+        // If clickable, set cursor and click handler
+        if (onClick != null) {
+            box.setOnMouseClicked((MouseEvent e) -> onClick.run());
+            box.setStyle(box.getStyle() + " -fx-cursor: hand;");
+        }
+
         return box;
     }
 
-    // ==========================
-    // Pie Chart
-    // ==========================
     private static PieChart createPieChart() {
-        PieChart pieChart = new PieChart();
-        pieChart.setTitle("Top Selling Today");
-        pieChart.getData().addAll(
-                new PieChart.Data("Notebook", 25),
-                new PieChart.Data("Pen", 18),
-                new PieChart.Data("Marker", 10),
-                new PieChart.Data("Stapler", 5)
-        );
-        pieChart.setLegendVisible(true);
-        pieChart.setStyle("-fx-background-color: #2e2e2e;");
+        PieChart chart = new PieChart();
+        chart.setTitle("Top Selling Today");
+        chart.setLabelsVisible(true);
+        chart.setLegendVisible(true);
+        chart.setLegendSide(Side.BOTTOM);
+        chart.setStyle("-fx-background-color: #2e2e2e; -fx-background-radius: 10; -fx-padding: 10;");
+
+        Map<String, Integer> pieData = TransactionDAO.getTodayTransactionSummaryByProduct();
+
+        for (Map.Entry<String, Integer> entry : pieData.entrySet()) {
+            String label = entry.getKey();
+            if (label.length() > 15) {
+                label = label.substring(0, 12) + "...";
+            }
+
+            chart.getData().add(new PieChart.Data(label, entry.getValue()));
+        }
+
         Platform.runLater(() -> {
-            Node bg = pieChart.lookup(".chart-plot-background");
+            Node bg = chart.lookup(".chart-plot-background");
             if (bg != null) bg.setStyle("-fx-background-color: transparent;");
+
+            Node legend = chart.lookup(".chart-legend");
+            if (legend != null) {
+                legend.setStyle("""
+                -fx-background-color: transparent;
+                -fx-text-fill: white;
+                -fx-font-size: 13px;
+            """);
+            }
+
+            chart.lookupAll(".chart-legend-item").forEach(item -> {
+                item.setStyle("-fx-text-fill: white;");
+            });
+
+            chart.lookupAll(".chart-pie-label").forEach(labelNode -> {
+                labelNode.setStyle("-fx-fill: white; -fx-font-size: 13px;");
+            });
         });
-        return pieChart;
+
+        return chart;
     }
 
-    // ==========================
-    // Bar Chart
-    // ==========================
     private static BarChart<String, Number> createBarChart() {
+        // Create axes
         CategoryAxis xAxis = new CategoryAxis();
         NumberAxis yAxis = new NumberAxis();
         xAxis.setLabel("Product");
         yAxis.setLabel("Units Sold");
 
+        // Create bar chart
         BarChart<String, Number> barChart = new BarChart<>(xAxis, yAxis);
         barChart.setTitle("Top Selling This Week");
 
         XYChart.Series<String, Number> series = new XYChart.Series<>();
-        series.getData().add(new XYChart.Data<>("Notebook", 80));
-        series.getData().add(new XYChart.Data<>("Pen", 65));
-        series.getData().add(new XYChart.Data<>("Binder", 50));
-        series.getData().add(new XYChart.Data<>("Tape", 40));
+        series.setName("Top Selling");
+
+        Map<String, Integer> weeklyData = TransactionDAO.getWeeklyTransactionSummaryByProduct();
+
+        int maxVal = 5;
+
+        for (Map.Entry<String, Integer> entry : weeklyData.entrySet()) {
+            String label = entry.getKey();
+            int value = entry.getValue();
+
+            // Optionally truncate long product names
+            if (label.length() > 12) {
+                label = label.substring(0, 10) + "...";
+            }
+
+            series.getData().add(new XYChart.Data<>(label, value));
+
+            if (value > maxVal) {
+                maxVal = value;
+            }
+        }
+
+        // Y-axis scaling like in your createChart method
+        int upperBound = ((maxVal + 9) / 10) * 10;
+        yAxis.setAutoRanging(false);
+        yAxis.setUpperBound(upperBound);
+        yAxis.setTickUnit(upperBound / 5.0);
 
         barChart.getData().add(series);
+
+        // Apply style settings
         barChart.setLegendVisible(false);
-        barChart.setStyle("-fx-background-color: #2e2e2e;");
+        barChart.setHorizontalGridLinesVisible(true);
+        barChart.setVerticalGridLinesVisible(false);
+        xAxis.setTickMarkVisible(false);
+        yAxis.setTickMarkVisible(true);
+        barChart.setAlternativeRowFillVisible(false);
+        barChart.setAlternativeColumnFillVisible(false);
+
+        // Aesthetic styling (background, padding, rounded corners)
+        barChart.setStyle("-fx-background-color: #2e2e2e; -fx-background-radius: 10; -fx-padding: 10;");
+
         return barChart;
     }
 
-    // ==========================
-    // Transactions List
-    // ==========================
     private static VBox createTransactionsList() {
         VBox transactionsList = new VBox(8);
         transactionsList.setId("transactionsList");
 
-        addTransactionItem(transactionsList, "09:30 AM", "₱250.00", "Notebook (2), Pens (3)");
-        addTransactionItem(transactionsList, "10:45 AM", "₱180.50", "Binder (1), Paper (5)");
-        addTransactionItem(transactionsList, "11:15 AM", "₱95.00", "Markers (1), Tape (2)");
+        List<Transaction> recent = TransactionDAO.getRecentTransactions();
+        for (Transaction t : recent) {
+            addTransactionItem(transactionsList, t.getFormattedTime(), "₱" + t.getAmount(), t.getDescription());
+        }
+
         return transactionsList;
     }
 
     private static void addTransactionItem(VBox container, String time, String amount, String items) {
         HBox item = new HBox(15);
         item.setAlignment(Pos.CENTER_LEFT);
-        item.setPadding(new Insets(12, 15, 12, 15));
-        item.setStyle("-fx-background-color: #3a3a3a; -fx-background-radius: 8;");
+        item.getStyleClass().add("transaction-item");
 
         Label timeLabel = new Label(time);
-        timeLabel.setStyle("-fx-font-weight: bold; -fx-min-width: 100; -fx-text-fill: #ffffff;");
+        timeLabel.getStyleClass().add("transaction-time");
 
         Label amountLabel = new Label(amount);
-        amountLabel.setStyle("-fx-text-fill: #4CAF50; -fx-font-weight: bold; -fx-min-width: 100;");
+        amountLabel.getStyleClass().add("transaction-amount");
 
-        Label itemsLabel = new Label(items);
-        itemsLabel.setStyle("-fx-text-fill: #cccccc;");
+        String shortDescription = items.length() > 35 ? items.substring(0, 32) + "..." : items;
+
+        Label itemsLabel = new Label(shortDescription);
+        itemsLabel.getStyleClass().add("transaction-items");
         itemsLabel.setWrapText(true);
         HBox.setHgrow(itemsLabel, Priority.ALWAYS);
+
+        // Redirect to today's transaction layout
+        item.setOnMouseClicked(e -> EmployeeAccess.getLayout().setCenter(EmployeeTransactionLayout.build()));
+        item.setStyle("-fx-cursor: hand;");
 
         item.getChildren().addAll(timeLabel, amountLabel, itemsLabel);
         container.getChildren().add(item);
     }
 
-    // ==========================
-    // Utility
-    // ==========================
+
     private static String toHexColor(Color color) {
         return String.format("#%02X%02X%02X",
                 (int) (color.getRed() * 255),
