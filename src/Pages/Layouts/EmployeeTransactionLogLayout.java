@@ -1,6 +1,7 @@
 package Pages.Layouts;
 
-import DB.*;
+import Model.DAO.TransactionDAO;
+import Model.POJO.Transaction;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;

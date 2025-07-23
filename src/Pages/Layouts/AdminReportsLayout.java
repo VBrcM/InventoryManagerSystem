@@ -1,7 +1,7 @@
 package Pages.Layouts;
 
-import DB.SaleItem;
-import DB.SaleItemDAO;
+import Model.POJO.SaleItem;
+import Model.DAO.SaleItemDAO;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;

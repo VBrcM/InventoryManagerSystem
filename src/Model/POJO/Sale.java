@@ -1,4 +1,4 @@
-package DB;
+package Model.POJO;
 
 import java.time.LocalDateTime;
 
@@ -21,6 +21,19 @@ public class Sale {
 
     public LocalDateTime getDateTime() {
         return dateTime;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public void setDateTime(LocalDateTime dateTime) {
+        this.dateTime = dateTime;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Sale{id=%d, dateTime=%s}", id, dateTime);
     }
 }
 

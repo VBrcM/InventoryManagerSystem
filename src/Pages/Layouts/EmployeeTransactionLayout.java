@@ -2,6 +2,8 @@ package Pages.Layouts;
 
 import DB.*;
 import Dialogs.*;
+import Model.DAO.*;
+import Model.POJO.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -104,7 +106,7 @@ public class EmployeeTransactionLayout {
             String selectedCategory = categoryFilter.getValue();
 
             filteredList.setPredicate(p -> {
-                String name = p.getProduct() != null ? p.getProduct().toLowerCase() : "";
+                String name = p.getProductName() != null ? p.getProductName().toLowerCase() : "";
                 String category = p.getCategoryName() != null ? p.getCategoryName().toLowerCase() : "";
                 boolean matchesSearch = name.contains(keyword) || category.contains(keyword);
                 boolean matchesCategory = selectedCategory.equals("All Categories") ||

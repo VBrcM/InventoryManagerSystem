@@ -1,4 +1,4 @@
-package DB;
+package Model.POJO;
 
 public class SaleItem {
     private int siId;

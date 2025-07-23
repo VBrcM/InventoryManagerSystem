@@ -1,5 +1,6 @@
 package Pages.Layouts;
 
+import Model.DAO.ProductDAO;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -122,6 +123,7 @@ public class AdminDashboardLayout {
         barChart.setTitle(title);
         XYChart.Series<String, Number> series = new XYChart.Series<>();
         series.setName(title);
+        barChart.setStyle("-fx-background-color: #2e2e2e; -fx-background-radius: 10; -fx-padding: 10;");
 
         String sql;
         switch (title) {
@@ -129,14 +131,14 @@ public class AdminDashboardLayout {
                 xAxis.setLabel("Category");
                 yAxis.setLabel("Quantity Sold");
                 sql = """
-                SELECT c.category, SUM(si.si_qty) AS total
+                SELECT c.category_name, SUM(si.si_qty) AS total
                 FROM sale_item si
                 JOIN product p ON si.product_id = p.product_id
                 JOIN category c ON p.category_id = c.category_id
                 JOIN sale s ON si.sale_id = s.sale_id
                 WHERE MONTH(s.sale_date) = MONTH(CURDATE())
                   AND YEAR(s.sale_date) = YEAR(CURDATE())
-                GROUP BY c.category
+                GROUP BY c.category_name
                 ORDER BY total DESC
             """;
             }
@@ -144,31 +146,34 @@ public class AdminDashboardLayout {
                 xAxis.setLabel("Category");
                 yAxis.setLabel("Quantity Sold");
                 sql = """
-                SELECT c.category, SUM(si.si_qty) AS total
+                SELECT c.category_name, SUM(si.si_qty) AS total
                 FROM sale_item si
                 JOIN product p ON si.product_id = p.product_id
                 JOIN category c ON p.category_id = c.category_id
                 JOIN sale s ON si.sale_id = s.sale_id
                 WHERE MONTH(s.sale_date) = MONTH(CURDATE() - INTERVAL 1 MONTH)
                   AND YEAR(s.sale_date) = YEAR(CURDATE() - INTERVAL 1 MONTH)
-                GROUP BY c.category
+                GROUP BY c.category_name
                 ORDER BY total DESC
             """;
             }
             case "Most Popular Items" -> {
                 xAxis.setLabel("Product");
                 yAxis.setLabel("Quantity Sold");
+                xAxis.setTickLabelRotation(0); // horizontal
+
                 sql = """
-                SELECT p.product, SUM(si.si_qty) AS total
-                FROM sale_item si
-                JOIN product p ON si.product_id = p.product_id
-                JOIN sale s ON si.sale_id = s.sale_id
-                WHERE YEAR(s.sale_date) = YEAR(CURDATE())
-                GROUP BY p.product
-                ORDER BY total DESC
-                LIMIT 10
-            """;
+                    SELECT p.product_name, SUM(si.si_qty) AS total
+                    FROM sale_item si
+                    JOIN product p ON si.product_id = p.product_id
+                    JOIN sale s ON si.sale_id = s.sale_id
+                    WHERE YEAR(s.sale_date) = YEAR(CURDATE())
+                    GROUP BY p.product_name
+                    ORDER BY total DESC
+                    LIMIT 5
+                """;
             }
+
             default -> {
                 barChart.setTitle("Invalid Chart Type");
                 return barChart;
@@ -183,6 +188,9 @@ public class AdminDashboardLayout {
 
             while (rs.next()) {
                 String label = rs.getString(1);  // category or product name
+                if (title.equals("Most Popular Items") && label.length() > 12) {
+                    label = label.substring(0, 10) + "...";
+                }
                 int value = rs.getInt(2);        // quantity
                 series.getData().add(new XYChart.Data<>(label, value));
 
@@ -216,13 +224,12 @@ public class AdminDashboardLayout {
 
     // Creates a pie chart showing today's sales grouped by category
     private static PieChart createPieChart() {
-        // Create PieChart and set basic styling
         PieChart chart = new PieChart();
         chart.setTitle("Today's Sales");
-        chart.setStyle("-fx-background-color: #2e2e2e; -fx-background-radius: 10;");
-        chart.setLegendSide(Side.BOTTOM);
         chart.setLabelsVisible(true);
         chart.setLegendVisible(true);
+        chart.setLegendSide(Side.BOTTOM);
+        chart.setStyle("-fx-background-color: #2e2e2e; -fx-background-radius: 10; -fx-padding: 10;");
 
         try (Connection conn = JDBC.connect()) {
             if (conn == null) {
@@ -231,23 +238,21 @@ public class AdminDashboardLayout {
             }
 
             String query = """
-            SELECT c.category AS label, SUM(si.si_qty) AS value
-            FROM sale s
-            JOIN sale_item si ON s.sale_id = si.sale_id
-            JOIN product p ON si.product_id = p.product_id
-            JOIN category c ON p.category_id = c.category_id
-            WHERE DATE(s.sale_date) = CURDATE()
-            GROUP BY c.category
-        """;
+                SELECT c.category_name AS label, SUM(si.si_qty) AS value
+                FROM sale s
+                JOIN sale_item si ON s.sale_id = si.sale_id
+                JOIN product p ON si.product_id = p.product_id
+                JOIN category c ON p.category_id = c.category_id
+                WHERE DATE(s.sale_date) = CURDATE()
+                GROUP BY c.category_name
+            """;
 
             PreparedStatement stmt = conn.prepareStatement(query);
             ResultSet rs = stmt.executeQuery();
 
-            // Populate chart data
             while (rs.next()) {
                 String label = rs.getString("label");
                 int value = rs.getInt("value");
-                System.out.println("PieChart → " + label + ": " + value); // Debug
                 chart.getData().add(new PieChart.Data(label, value));
             }
 
@@ -255,12 +260,32 @@ public class AdminDashboardLayout {
             e.printStackTrace();
         }
 
-        // Remove background inside pie (optional visual polish)
         Platform.runLater(() -> {
+            // Make the chart background inside transparent
             Node bg = chart.lookup(".chart-plot-background");
             if (bg != null) {
                 bg.setStyle("-fx-background-color: transparent;");
             }
+
+            // Make legend text white and legend background transparent
+            Node legend = chart.lookup(".chart-legend");
+            if (legend != null) {
+                legend.setStyle("""
+            -fx-background-color: transparent;
+            -fx-text-fill: white;
+            -fx-font-size: 13px;
+        """);
+            }
+
+            // Make each legend item label white
+            chart.lookupAll(".chart-legend-item").forEach(item -> {
+                item.setStyle("-fx-text-fill: white;");
+            });
+
+            // Make slice labels white
+            chart.lookupAll(".chart-pie-label").forEach(label ->
+                    label.setStyle("-fx-fill: white; -fx-font-size: 13px;")
+            );
         });
 
         return chart;

@@ -44,7 +44,8 @@ public class EmployeeAccess {
         Button dashboardBtn = createNavButton("Dashboard", "📊", () -> showDashboard());
         Button salesBtn = createNavButton("New Sale", "💰", () -> showSales());
         Button inventoryBtn = createNavButton("Inventory", "📦", () -> showInventory());
-        Button transactionsBtn = createNavButton("Transactions", "📈", () -> showTransactions());
+        Button transactionsBtn = createNavButton("Today's Transactions", "📈", () -> showTransactions());
+        Button transactionsLogBtn = createNavButton("Transaction Log", "📈", () -> showTransactions());
         Button logoutBtn = createNavButton("Logout", "🔒", () -> AccessLayout.show());
         Button exitBtn = createNavButton("Exit", "🚪", () -> System.exit(0));
 
@@ -53,7 +54,8 @@ public class EmployeeAccess {
                 wrap(dashboardBtn),
                 wrap(salesBtn),
                 wrap(inventoryBtn),
-                wrap(transactionsBtn)
+                wrap(transactionsBtn),
+                wrap(transactionsLogBtn)
         );
 
         VBox bottomButtons = new VBox(15,
@@ -85,6 +87,9 @@ public class EmployeeAccess {
 
     private static void showTransactions() {
         layout.setCenter(EmployeeTransactionsLayout.build());
+    }
+    private static void showTransactionsLogs() {
+        layout.setCenter(EmployeeTransactionLogLayout.build(layout));
     }
 
     // Data Loading
@@ -157,6 +162,7 @@ public class EmployeeAccess {
             case "sales": showSales(); break;
             case "inventory": showInventory(); break;
             case "transactions": showTransactions(); break;
+            case "transaction log": showTransactions(); break;
             default: showDashboard();
         }
     }

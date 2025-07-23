@@ -12,7 +12,7 @@ import javafx.stage.Stage;
 public class AdminAccess {
 
     public static void show(Stage stage) {
-        // ===== Navigation Bar (Left Side) =====
+        // Navigation Bar
         VBox navBar = new VBox(20);
         navBar.getStyleClass().add("navbar");
         navBar.setAlignment(Pos.TOP_CENTER);
@@ -20,7 +20,7 @@ public class AdminAccess {
         navBar.setMaxHeight(Double.MAX_VALUE);
         VBox.setVgrow(navBar, Priority.ALWAYS);
 
-        // ===== Title (Inventory Manager) =====
+        // Title
         Label title1 = new Label("Inventory");
         Label title2 = new Label("Manager");
         title1.getStyleClass().add("navbar-title-line");
@@ -29,20 +29,16 @@ public class AdminAccess {
         titleBox.setAlignment(Pos.CENTER);
         titleBox.setSpacing(4);
 
-        // ===== Navigation Buttons =====
+        // Navigation Buttons
         Button dashboardBtn = makeNavButton("Dashboard", "📊");
         Button inventoryBtn = makeNavButton("Inventory", "📦");
         Button reportsBtn = makeNavButton("Sales Reports", "📈");
         Button logoutBtn = makeNavButton("Logout", "🔒");
         Button exitBtn = makeNavButton("Exit", "🚪");
 
-        // ===== Grouping Top and Bottom Buttons =====
-
-        // Normal buttons
         VBox topButtons = new VBox(15, wrap(dashboardBtn), wrap(inventoryBtn));
         topButtons.setAlignment(Pos.TOP_CENTER);
 
-        // Right-aligned reports button
         HBox reportsRow = new HBox(wrap(reportsBtn));
         reportsRow.setAlignment(Pos.CENTER_RIGHT);
 
@@ -55,27 +51,22 @@ public class AdminAccess {
         Region spacer = new Region();
         VBox.setVgrow(spacer, Priority.ALWAYS);
 
-        // ===== Add All Components to Navigation Bar =====
         navBar.getChildren().addAll(titleBox, topButtonBox, spacer, bottomButtonBox);
 
-        // ===== Main Layout =====
+        // Main Layout
         BorderPane layout = new BorderPane();
         layout.setLeft(navBar);
-        layout.setCenter(Pages.Layouts.AdminDashboardLayout.build(layout)); // Default view
+        layout.setCenter(Pages.Layouts.AdminDashboardLayout.build(layout));
         layout.setPrefSize(Double.MAX_VALUE, Double.MAX_VALUE);
-        BorderPane.setAlignment(navBar, Pos.TOP_LEFT);
 
-        // ===== Responsive Navbar Width (16% of screen width) =====
         layout.widthProperty().addListener((obs, oldVal, newVal) -> {
             navBar.setPrefWidth(newVal.doubleValue() * 0.16);
         });
 
-        // ===== Set Layout in Root StackPane =====
         StackPane.setAlignment(layout, Pos.CENTER);
-        StackPane.setMargin(layout, Insets.EMPTY);
         AccessPage.root.getChildren().setAll(layout);
 
-        // ===== Button Actions =====
+        // Button Actions
         dashboardBtn.setOnAction(e -> layout.setCenter(Pages.Layouts.AdminDashboardLayout.build(layout)));
         inventoryBtn.setOnAction(e -> layout.setCenter(Pages.Layouts.AdminInventoryLayout.build()));
         reportsBtn.setOnAction(e -> layout.setCenter(Pages.Layouts.AdminReportsLayout.build(layout)));

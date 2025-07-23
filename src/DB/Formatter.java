@@ -6,7 +6,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
 public class Formatter {
-    // Formats a double value into Philippine Peso currency format (e.g., ₱1,234.56)
+
     public static String formatCurrency(double value) {
         NumberFormat formatter = NumberFormat.getNumberInstance(Locale.US);
         formatter.setMinimumFractionDigits(2);
@@ -16,10 +16,9 @@ public class Formatter {
         return result;
     }
 
-    // Formats a LocalDateTime into a readable string
     public static String formatTime(LocalDateTime dateTime) {
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("hh:mm a");
-        String result = dateTime.format(timeFormatter);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("hh:mm a");
+        String result = dateTime.format(formatter);
         System.out.println("[DEBUG] Formatted time: " + result);
         return result;
     }
@@ -31,4 +30,3 @@ public class Formatter {
         return result;
     }
 }
-

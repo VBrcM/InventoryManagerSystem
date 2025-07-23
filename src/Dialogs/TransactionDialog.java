@@ -1,6 +1,12 @@
 package Dialogs;
 
 import DB.*;
+import Model.DAO.SaleDAO;
+import Model.DAO.SaleItemDAO;
+import Model.DAO.TransactionDAO;
+import Model.POJO.Product;
+import Model.POJO.SaleItem;
+import Model.POJO.Transaction;
 import Pages.AccessPage;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -33,10 +39,10 @@ public class TransactionDialog {
         title.getStyleClass().add("dialog-title");
 
         // Product info labels
-        Label nameLabel = new Label("Product: " + selectedProduct.getProduct());
+        Label nameLabel = new Label("Product: " + selectedProduct.getProductName());
         Label categoryLabel = new Label("Category: " + selectedProduct.getCategoryName());
         Label currentStockLabel = new Label("Current Stock: " + selectedProduct.getStock());
-        Label priceLabel = new Label("Unit Price: " + Formatter.formatCurrency(selectedProduct.getPrice()));
+        Label priceLabel = new Label("Unit Price: " + Formatter.formatCurrency(selectedProduct.getProductPrice()));
 
         String nameStyle = "-fx-font-size: 16px; -fx-text-fill: white; -fx-font-weight: bold";
         String infoStyle = "-fx-font-size: 14px; -fx-text-fill: white;";
@@ -93,13 +99,13 @@ public class TransactionDialog {
 
                 // Step 2: Record Sale and Sale Item if reducing stock
                 if (type.equals("reduce")) {
-                    int saleId = SaleDAO.insert(quantity, selectedProduct.getPrice() * quantity);
+                    int saleId = SaleDAO.insert(quantity, selectedProduct.getProductPrice() * quantity);
 
                     SaleItem item = new SaleItem();
                     item.setSaleId(saleId);
                     item.setProductId(selectedProduct.getProductId());
                     item.setQuantity(quantity);
-                    item.setPrice(selectedProduct.getPrice());
+                    item.setPrice(selectedProduct.getProductPrice());
                     item.setSiDate(LocalDate.now().toString());
 
                     boolean itemSuccess = SaleItemDAO.insertSaleItem(item);

@@ -1,5 +1,9 @@
 package Dialogs;
 
+import Model.DAO.CategoryDAO;
+import Model.DAO.ProductDAO;
+import Model.POJO.Category;
+import Model.POJO.Product;
 import Pages.AccessPage;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -9,7 +13,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.*;
-import DB.*;
 
 public class InventoryDialog {
     public static void show(Product productToEdit, ObservableList<Product> products, Runnable onUpdated) {
@@ -61,15 +64,15 @@ public class InventoryDialog {
         // Text area for optional product description
         TextArea descriptionField = new TextArea();
         descriptionField.setPromptText("Description");
-        descriptionField.setPrefSize(400, 108);
+        descriptionField.setPrefSize(400, 208);
         descriptionField.setWrapText(true);
-        descriptionField.getStyleClass().add("desc-pane");
+        descriptionField.getStyleClass().add("desc-area");
 
         // If editing, populate the fields with the existing product's values
         if (productToEdit != null) {
-            nameField.setText(productToEdit.getProduct());
+            nameField.setText(productToEdit.getProductName());
             categoryField.setText(productToEdit.getCategoryName());
-            priceField.setText(String.valueOf(productToEdit.getPrice()));
+            priceField.setText(String.valueOf(productToEdit.getProductPrice()));
             quantityField.setText(String.valueOf(productToEdit.getStock()));
             descriptionField.setText(productToEdit.getDescription());
         }
@@ -107,10 +110,10 @@ public class InventoryDialog {
                 // Prepare product object to insert or update
                 Product product = new Product();
                 product.setProductId(productToEdit != null ? productToEdit.getProductId() : 0);
-                product.setProduct(name);
+                product.setProductName(name);
                 product.setCategoryId(categoryObj.getCategoryId());
-                product.setCategoryName(categoryObj.getCategory()); // for UI purposes
-                product.setPrice(price);
+                product.setCategoryName(categoryObj.getCategoryName()); // for UI purposes
+                product.setProductPrice(price);
                 product.setStock(quantity);
                 product.setDescription(description);
 
@@ -120,7 +123,7 @@ public class InventoryDialog {
                 if (productToEdit == null) {
                     // New product
                     Product inserted = dao.insert(product);
-                    inserted.setCategoryName(categoryObj.getCategory());
+                    inserted.setCategoryName(categoryObj.getCategoryName());
                     products.add(inserted); // Add to ObservableList
                 } else {
                     // Update existing product

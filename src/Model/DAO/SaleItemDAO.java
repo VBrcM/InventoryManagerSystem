@@ -1,32 +1,48 @@
-package DB;
+package Model.DAO;
+
+import DB.JDBC;
+import Model.POJO.SaleItem;
 
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+/**
+ * DAO class to handle operations for SaleItem.
+ */
 public class SaleItemDAO {
+    private static final Logger LOGGER = Logger.getLogger(SaleItemDAO.class.getName());
 
-    // Full object insert
     public static void insert(SaleItem si) throws SQLException {
         String sql = "INSERT INTO Sale_item (sale_id, product_id, si_date, si_qty, si_price) VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = JDBC.connect();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
+
             stmt.setInt(1, si.getSaleId());
             stmt.setInt(2, si.getProductId());
             stmt.setString(3, si.getSiDate());
             stmt.setInt(4, si.getQuantity());
             stmt.setDouble(5, si.getPrice());
             stmt.executeUpdate();
+
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "Error inserting SaleItem: {0}", e.getMessage());
+            throw e;
         }
     }
 
-    // Convenience insert (uses product's price automatically)
+    /**
+     * Inserts a SaleItem using only saleId, productId, and quantity.
+     * Price is fetched automatically from product table.
+     */
     public static void insert(int saleId, int productId, int qty) throws SQLException {
         String sql = """
-        INSERT INTO Sale_item (sale_id, product_id, si_date, si_qty, si_price)
-        VALUES (?, ?, ?, ?, (SELECT product_price FROM product WHERE product_id = ?))
-    """;
+            INSERT INTO Sale_item (sale_id, product_id, si_date, si_qty, si_price)
+            VALUES (?, ?, ?, ?, (SELECT product_price FROM product WHERE product_id = ?))
+        """;
 
         try (Connection conn = JDBC.connect();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -35,25 +51,34 @@ public class SaleItemDAO {
             stmt.setInt(2, productId);
             stmt.setDate(3, Date.valueOf(LocalDate.now()));
             stmt.setInt(4, qty);
-            stmt.setInt(5, productId);  // correct price fetch from Product using p_id
-
+            stmt.setInt(5, productId);
             stmt.executeUpdate();
+
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, String.format("Error inserting SaleItem with saleId=%d, productId=%d", saleId, productId), e);
+            throw e;
         }
     }
 
+    /**
+     * Wrapper for insert with boolean result.
+     */
     public static boolean insertSaleItem(SaleItem si) {
         try {
             insert(si);
             return true;
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Failed to insert SaleItem: {0}", e.getMessage());
             return false;
         }
     }
 
-    // Updates an existing sale item record in the Sale_item table
+    /**
+     * Updates an existing SaleItem.
+     */
     public void update(SaleItem si) throws SQLException {
         String sql = "UPDATE Sale_item SET sale_id=?, product_id=?, si_date=?, si_qty=?, si_price=? WHERE si_id=?";
+
         try (Connection conn = JDBC.connect();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
@@ -63,39 +88,52 @@ public class SaleItemDAO {
             stmt.setInt(4, si.getQuantity());
             stmt.setDouble(5, si.getPrice());
             stmt.setInt(6, si.getSiId());
-
             int rows = stmt.executeUpdate();
-            System.out.println("Update SaleItem ID " + si.getSiId() + ": rows affected = " + rows);
+            LOGGER.log(Level.INFO, "Updated SaleItem ID {0}: rows affected = {1}", new Object[]{si.getSiId(), rows});
+
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, String.format("Error updating SaleItem ID %d", si.getSiId()), e);
+            throw e;
         }
     }
 
-    // Deletes a sale item record from the Sale_item table by its ID
+    /**
+     * Deletes a SaleItem by its ID.
+     */
     public void delete(int siId) throws SQLException {
         String sql = "DELETE FROM Sale_item WHERE si_id = ?";
+
         try (Connection conn = JDBC.connect();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setInt(1, siId);
             int rows = stmt.executeUpdate();
-            System.out.println("Delete SaleItem ID " + siId + ": rows affected = " + rows);
+            LOGGER.log(Level.INFO, "Deleted SaleItem ID {0}: rows affected = {1}", new Object[]{siId, rows});
+
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, String.format("Error deleting SaleItem ID %d", siId), e);
+            throw e;
         }
     }
 
-    // Retrieves all sale items for a specific date, including product and category names
+    /**
+     * Gets all SaleItems for a given date.
+     */
     public static List<SaleItem> getSaleItemsByDate(LocalDate date) {
         List<SaleItem> list = new ArrayList<>();
-
-        String sql = "SELECT si.*, p.product AS productName, c.category AS categoryName " +
-                "FROM sale_item si " +
-                "JOIN product p ON si.product_id = p.product_id " +
-                "JOIN category c ON p.category_id = c.category_id " +
-                "JOIN sale s ON si.sale_id = s.sale_id " +
-                "WHERE DATE(s.sale_date) = ?";
+        String sql = """
+            SELECT si.*, p.product_name AS productName, c.category_name AS categoryName
+            FROM sale_item si
+            JOIN product p ON si.product_id = p.product_id
+            JOIN category c ON p.category_id = c.category_id
+            JOIN sale s ON si.sale_id = s.sale_id
+            WHERE DATE(s.sale_date) = ?
+        """;
 
         try (Connection conn = JDBC.connect();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setDate(1, java.sql.Date.valueOf(date));
+            stmt.setDate(1, Date.valueOf(date));
             ResultSet rs = stmt.executeQuery();
 
             while (rs.next()) {
@@ -111,19 +149,20 @@ public class SaleItemDAO {
                 list.add(item);
             }
 
-            System.out.println("Fetched " + list.size() + " SaleItems for date: " + date);
+            LOGGER.log(Level.INFO, "Fetched {0} SaleItems for date: {1}", new Object[]{list.size(), date});
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, String.format("Error fetching SaleItems for date %s", date), e);
         }
 
         return list;
     }
 
-    // Retrieves all unique sale transaction dates from the sale table
+    /**
+     * Retrieves all distinct sale transaction dates.
+     */
     public static List<LocalDate> getAllTransactionDates() {
         List<LocalDate> dates = new ArrayList<>();
-
         String sql = "SELECT DISTINCT DATE(sale_date) AS sale_day FROM sale ORDER BY sale_day DESC";
 
         try (Connection conn = JDBC.connect();
@@ -134,16 +173,18 @@ public class SaleItemDAO {
                 dates.add(rs.getDate("sale_day").toLocalDate());
             }
 
-            System.out.println("Found " + dates.size() + " distinct transaction dates");
+            LOGGER.log(Level.INFO, "Found {0} distinct transaction dates", dates.size());
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error retrieving transaction dates", e);
         }
 
         return dates;
     }
 
-    // Retrieves all distinct sale dates (redundant with getAllTransactionDates but can be separated for clarity)
+    /**
+     * Retrieves all distinct sale dates.
+     */
     public static List<LocalDate> getAllSaleDates() {
         List<LocalDate> dates = new ArrayList<>();
         String sql = "SELECT DISTINCT DATE(sale_date) AS sale_date FROM sale ORDER BY sale_date DESC";
@@ -156,10 +197,10 @@ public class SaleItemDAO {
                 dates.add(rs.getDate("sale_date").toLocalDate());
             }
 
-            System.out.println("Retrieved " + dates.size() + " unique sale dates");
+            LOGGER.log(Level.INFO, "Retrieved {0} unique sale dates", dates.size());
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error retrieving sale dates", e);
         }
 
         return dates;

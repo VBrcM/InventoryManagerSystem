@@ -1,6 +1,7 @@
 package Pages.Layouts;
 
 import DB.*;
+import Model.POJO.Transaction;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -47,7 +48,7 @@ public class EmployeeTransactionLogDetailsLayout {
 
         TableColumn<Transaction, String> timeCol = new TableColumn<>("Time");
         timeCol.setCellValueFactory(cellData -> new SimpleStringProperty(
-                Formatter.formatTime(cellData.getValue().getTransDate().toLocalDateTime())
+                Formatter.formatTime(cellData.getValue().getDate().atTime(0, 0))
         ));
 
         table.getColumns().addAll(productCol, typeCol, qtyCol, timeCol);
