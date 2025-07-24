@@ -14,42 +14,51 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class EmployeeInventoryLayout {
-
-    private static TableView<Product> table;
-    private static ObservableList<Product> products;
-    private static FilteredList<Product> filteredList;
 
     public static StackPane build() {
         return build(false); // Default: show all
     }
 
     public static StackPane build(boolean showOnlyLowStock) {
+        // ===== Title =====
         Label title = new Label("Inventory");
         title.setId("title-label");
+        title.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: white;");
+        title.setPadding(new Insets(10));
+        title.setAlignment(Pos.CENTER);
+        title.setMaxWidth(Double.MAX_VALUE);
 
+        // ===== Search Field =====
         TextField searchField = new TextField();
         searchField.setPromptText("Search items...");
         searchField.getStyleClass().add("input-field");
+        searchField.setMaxWidth(Double.MAX_VALUE);
 
+        // ===== Category Filter =====
         ProductDAO dao = new ProductDAO();
         List<Product> productList = new ArrayList<>();
-
         try {
             productList = dao.getAll();
         } catch (SQLException e) {
             e.printStackTrace();
-            // Optional: Show an error dialog
         }
 
         if (showOnlyLowStock) {
             productList.removeIf(p -> p.getStock() > 0);
         }
 
-        // Category filter ComboBox
+        // Calculate average stock per category
+        Map<String, Double> avgStockPerCategory = productList.stream()
+                .collect(Collectors.groupingBy(
+                        Product::getCategoryName,
+                        Collectors.averagingInt(Product::getStock)
+                ));
+
+        // Category filter
         List<String> categories = productList.stream()
                 .map(Product::getCategoryName)
                 .distinct()
@@ -61,9 +70,13 @@ public class EmployeeInventoryLayout {
         categoryFilter.getItems().addAll(categories);
         categoryFilter.setValue("All Categories");
         categoryFilter.getStyleClass().add("inventory-button");
+        categoryFilter.setPrefSize(200, 38);
 
+        // ===== Filters Layout =====
         HBox filtersBox = new HBox(10, searchField, categoryFilter);
         filtersBox.setAlignment(Pos.CENTER_LEFT);
+        filtersBox.setPadding(new Insets(10, 0, 10, 0));
+        HBox.setHgrow(searchField, Priority.ALWAYS);
 
         TableView<Product> table = new TableView<>();
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
@@ -98,7 +111,6 @@ public class EmployeeInventoryLayout {
         table.getColumns().addAll(nameCol, categoryCol, quantityCol, priceCol);
         VBox.setVgrow(table, Priority.ALWAYS);
 
-        // Filtered + sorted data
         ObservableList<Product> products = FXCollections.observableArrayList(productList);
         FilteredList<Product> filteredList = new FilteredList<>(products, p -> true);
 
@@ -122,16 +134,26 @@ public class EmployeeInventoryLayout {
         sortedList.comparatorProperty().bind(table.comparatorProperty());
         table.setItems(sortedList);
 
-        // Low stock styling
+        // Custom row highlighting
         table.setRowFactory(tv -> new TableRow<>() {
             @Override
             protected void updateItem(Product product, boolean empty) {
                 super.updateItem(product, empty);
-                getStyleClass().remove("low-stock");
+                setStyle("");
                 setTooltip(null);
-                if (product != null && !empty && product.getStock() < 10) {
-                    getStyleClass().add("low-stock");
-                    setTooltip(new Tooltip("Low stock! Consider restocking soon."));
+
+                if (product != null && !empty) {
+                    int stock = product.getStock();
+                    double avg = avgStockPerCategory.getOrDefault(product.getCategoryName(), 0.0);
+                    double threshold = avg * 0.2;
+
+                    if (stock == 0) {
+                        setStyle("-fx-background-color: #ff4d4d;"); // red
+                        setTooltip(new Tooltip("Out of stock"));
+                    } else if (stock < threshold) {
+                        setStyle("-fx-background-color: #ff9900;"); // orange
+                        setTooltip(new Tooltip("Low stock: below 20% of category average"));
+                    }
                 }
             }
         });
@@ -141,7 +163,6 @@ public class EmployeeInventoryLayout {
         content.setPadding(new Insets(30));
         content.setStyle("-fx-background-color: #1e1e1e;");
 
-        // Scrollable wrapper
         ScrollPane scrollPane = new ScrollPane(content);
         scrollPane.setFitToWidth(true);
         scrollPane.setFitToHeight(true);
@@ -154,11 +175,8 @@ public class EmployeeInventoryLayout {
             -fx-padding: 0;
         """);
 
-        // Final wrapper pane with matching background
         StackPane root = new StackPane(scrollPane);
         root.setStyle("-fx-background-color: #1e1e1e; -fx-border-color: transparent;");
-
         return root;
     }
-
 }

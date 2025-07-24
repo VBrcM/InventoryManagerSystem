@@ -11,6 +11,7 @@ public class SaleItem {
     private LocalDateTime siDate;
     private String productName;
     private String categoryName;
+    private Product product;
 
     public SaleItem() {}
 
@@ -28,7 +29,7 @@ public class SaleItem {
 
 
     public String getProductName() {
-        return productName;
+        return product != null ? product.getProductName() : productName;
     }
 
     public void setProductName(String productName) {
@@ -89,5 +90,13 @@ public class SaleItem {
 
     public void setSiDate(LocalDateTime siDate) {
         this.siDate = siDate;
+    }
+
+    public Product getProduct() {
+        return product;
+    }
+
+    public void setProduct(Product product) {
+        this.product = product;
     }
 }

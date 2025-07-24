@@ -1,6 +1,7 @@
 package Model.DAO;
 
 import DB.JDBC;
+import Model.POJO.CartItem;
 import Model.POJO.Product;
 import Model.POJO.Transaction;
 import java.sql.*;
@@ -11,7 +12,6 @@ import java.util.*;
 import java.util.logging.Logger;
 
 public class TransactionDAO {
-    private static final Logger logger = Logger.getLogger(TransactionDAO.class.getName());
 
     public static boolean record(Connection conn, Transaction transaction) throws SQLException {
         String sql = "INSERT INTO transaction (product_id, t_qty, t_date) VALUES (?, ?, NOW())";
@@ -287,21 +287,44 @@ public class TransactionDAO {
         return dates;
     }
 
-    public static boolean recordTransaction(Connection conn, Transaction txn) {
-        String sql = "INSERT INTO transaction (product_id, t_qty, t_date) VALUES (?, ?, ?)";
+    public static boolean insertCartTransaction(Connection conn, List<CartItem> cartItems) throws SQLException {
+        int generatedTId;
 
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, txn.getProductId());
-            stmt.setInt(2, txn.getTQty());
-            stmt.setTimestamp(3, Timestamp.valueOf(txn.getTDate()));
+        // Step 1: Insert first item to auto-generate t_id
+        String firstInsert = "INSERT INTO transaction (product_id, t_qty, t_date) VALUES (?, ?, ?)";
+        try (PreparedStatement stmt = conn.prepareStatement(firstInsert, Statement.RETURN_GENERATED_KEYS)) {
+            CartItem firstItem = cartItems.get(0);
+            stmt.setInt(1, firstItem.getProduct().getProductId());
+            stmt.setInt(2, firstItem.getQuantity());
+            stmt.setTimestamp(3, Timestamp.valueOf(LocalDateTime.now()));
+            stmt.executeUpdate();
 
-            return stmt.executeUpdate() > 0;
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
+            try (ResultSet rs = stmt.getGeneratedKeys()) {
+                if (rs.next()) {
+                    generatedTId = rs.getInt(1);
+                } else {
+                    throw new SQLException("Failed to retrieve generated transaction ID");
+                }
+            }
         }
+
+        // Step 2: Insert the remaining cart items using the same t_id
+        String insertRest = "INSERT INTO transaction (t_id, product_id, t_qty, t_date) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement stmt = conn.prepareStatement(insertRest)) {
+            for (int i = 1; i < cartItems.size(); i++) {
+                CartItem item = cartItems.get(i);
+                stmt.setInt(1, generatedTId);
+                stmt.setInt(2, item.getProduct().getProductId());
+                stmt.setInt(3, item.getQuantity());
+                stmt.setTimestamp(4, Timestamp.valueOf(LocalDateTime.now()));
+                stmt.addBatch();
+            }
+            stmt.executeBatch();
+        }
+
+        return true;
     }
+
 
     public static List<Transaction> getTransactionsByDate(LocalDate date) {
         List<Transaction> list = new ArrayList<>();

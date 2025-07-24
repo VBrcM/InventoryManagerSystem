@@ -1,8 +1,8 @@
 package Pages.Layouts.Employee;
 
 import DB.Formatter;
-import Model.DAO.TransactionDAO;
-import Model.POJO.Transaction;
+import Model.DAO.*;
+import Model.POJO.*;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -87,23 +87,23 @@ public class EmployeeTransactionLogLayout {
     /**
      * Creates a daily transaction summary card.
      */
-    private static VBox createDaySummary(LocalDate date, DateTimeFormatter formatter, List<Transaction> transactions, BorderPane layout) {
+    private static VBox createDaySummary(LocalDate date, DateTimeFormatter formatter, List<Sale> sales, BorderPane layout) {
         Label dateLabel = new Label("📅 " + date.format(formatter));
         dateLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: white;");
 
-        int totalTransactions = transactions.size();
-        Label countLabel = new Label("Total Transactions: " + totalTransactions);
+        int totalSalesCount = sales.size();
+        Label countLabel = new Label("Total Sales: " + totalSalesCount);
         countLabel.setStyle("-fx-text-fill: #cccccc;");
 
-        double totalSales = transactions.stream()
-                .mapToDouble(t -> t.getTQty() * t.getAmount())
+        double totalSalesAmount = sales.stream()
+                .mapToDouble(Sale::getTotalAmount)
                 .sum();
-        Label salesLabel = new Label("Total Sales of the Day: " + Formatter.formatCurrency(totalSales));
+        Label salesLabel = new Label("Total Sales of the Day: " + Formatter.formatCurrency(totalSalesAmount));
         salesLabel.setStyle("-fx-text-fill: #cccccc;");
 
         Button viewBtn = new Button("View Details");
         viewBtn.getStyleClass().add("inventory-button");
-        viewBtn.setOnAction(e -> layout.setCenter(EmployeeTransactionLogDetailsLayout.build(layout, date, transactions)));
+        viewBtn.setOnAction(e -> layout.setCenter(EmployeeTransactionLogDetailsLayout.build(layout, date, sales)));
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -123,7 +123,7 @@ public class EmployeeTransactionLogLayout {
      * Loads and displays transaction summaries by day.
      */
     private static void loadMoreDays(VBox dayList, BorderPane layout, VBox footerBox, int daysToLoad, boolean respectFilterLimit) {
-        List<LocalDate> allDates = TransactionDAO.getAllTransactionDates();
+        List<LocalDate> allDates = SaleDAO.getAllSaleDates();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM dd, yyyy");
         LocalDate today = LocalDate.now();
         LocalDate minDate = today.minusMonths(maxMonths);
@@ -135,9 +135,9 @@ public class EmployeeTransactionLogLayout {
             LocalDate date = allDates.get(i);
             if (respectFilterLimit && date.isBefore(minDate)) break;
 
-            List<Transaction> transactions = TransactionDAO.getTransactionsByDate(date);
-            if (!transactions.isEmpty()) {
-                VBox card = createDaySummary(date, formatter, transactions, layout);
+            List<Sale> sales = SaleDAO.getSalesByDate(date);
+            if (!sales.isEmpty()) {
+                VBox card = createDaySummary(date, formatter, sales, layout);
                 dayList.getChildren().add(dayList.getChildren().size() - 1, card);
                 added++;
                 totalDaysLoaded++;

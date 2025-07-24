@@ -2,9 +2,9 @@ package Model.POJO;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 
 public class Transaction {
+
 
     // Common fields
     private int tId;
@@ -21,7 +21,13 @@ public class Transaction {
     private String description;
     private double price;
     private Product product;
+    private String time;
+    private String itemsSummary;
+    private double total;
+
     // === Constructors ===
+    //Default
+    public Transaction() {}
 
     // Used when inserting full cart-based transaction (one per cart)
     public Transaction(int saleId, int tQty, double amount, LocalDateTime tDate) {
@@ -50,8 +56,26 @@ public class Transaction {
         this.tDate = tDate;
     }
 
-    public Transaction() {}
 
+    // Employee Transaction Layout
+    public Transaction(String time, String itemsSummary, double total) {
+        this.time = time;
+        this.itemsSummary = itemsSummary;
+        this.total = total;
+    }
+
+    public String getTime() {
+        return time;
+    }
+
+    public String getItemsSummary() {
+        return itemsSummary;
+    }
+
+    public double getTotal() {
+        return total;
+    }
+//=====
     // === Getters and Setters ===
     public int getTId() {
         return tId;

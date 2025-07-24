@@ -94,6 +94,17 @@ public class AdminReportDetailsLayout {
         } catch (SQLException e) {
             e.printStackTrace(); // Log to console (for dev)
         }
+        double grandTotal = table.getItems().stream()
+                .mapToDouble(item -> item.getSiQty() * item.getSiPrice())
+                .sum();
+
+        Label totalLabel = new Label("Total Amount: " + Formatter.formatCurrency(grandTotal));
+        totalLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: white;");
+
+        HBox totalBox = new HBox(totalLabel);
+        totalBox.setAlignment(Pos.CENTER_RIGHT);
+        totalLabel.setStyle("-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: white;");
+
         VBox.setVgrow(table, Priority.ALWAYS);
 
 
@@ -106,11 +117,11 @@ public class AdminReportDetailsLayout {
 
         HBox buttonBox = new HBox(backBtn);
         buttonBox.setAlignment(Pos.CENTER);
-        buttonBox.setPadding(new Insets(10, 0, 0, 0));
+        buttonBox.setPadding(new Insets(5, 0, 0, 0));
 
 
         // ===== Final Layout =====
-        VBox layout = new VBox(20, title, table, buttonBox);
+        VBox layout = new VBox(20, title, table, totalBox, buttonBox);
         layout.setPadding(new Insets(30));
         layout.setAlignment(Pos.TOP_CENTER);
 

@@ -17,6 +17,8 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class AdminInventoryLayout {
 
@@ -59,6 +61,12 @@ public class AdminInventoryLayout {
         if (showOnlyOutOfStock) {
             productList.removeIf(p -> p.getStock() > 0);
         }
+
+        Map<String, Double> avgStockPerCategory = productList.stream()
+                .collect(Collectors.groupingBy(
+                        Product::getCategoryName,
+                        Collectors.averagingInt(Product::getStock)
+                ));
 
         List<String> categories = productList.stream()
                 .map(Product::getCategoryName)
@@ -138,6 +146,30 @@ public class AdminInventoryLayout {
         SortedList<Product> sortedList = new SortedList<>(filteredList);
         sortedList.comparatorProperty().bind(table.comparatorProperty());
         table.setItems(sortedList);
+
+        // ===== Row Highlighting =====
+        table.setRowFactory(tv -> new TableRow<>() {
+            @Override
+            protected void updateItem(Product product, boolean empty) {
+                super.updateItem(product, empty);
+                setStyle("");
+                setTooltip(null);
+
+                if (product != null && !empty) {
+                    int stock = product.getStock();
+                    double avg = avgStockPerCategory.getOrDefault(product.getCategoryName(), 0.0);
+                    double threshold = avg * 0.2;
+
+                    if (stock == 0) {
+                        setStyle("-fx-background-color: #ff4d4d;"); // red
+                        setTooltip(new Tooltip("Out of stock"));
+                    } else if (stock < threshold) {
+                        setStyle("-fx-background-color: #ff9900;"); // orange
+                        setTooltip(new Tooltip("Low stock: below 20% of category average"));
+                    }
+                }
+            }
+        });
 
         // ===== Action Buttons =====
         Button addBtn = new Button("Add");

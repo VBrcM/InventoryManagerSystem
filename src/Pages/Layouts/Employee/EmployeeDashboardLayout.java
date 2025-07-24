@@ -14,14 +14,14 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 
+import java.sql.SQLException;
+import java.text.NumberFormat;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.LinkedHashMap;
+
 import static DB.Formatter.formatCurrency;
 import static Pages.EmployeeAccess.layout;
 
@@ -39,26 +39,29 @@ public class EmployeeDashboardLayout {
         dateLabel.getStyleClass().add("date-label");
 
         // ===== Stat Boxes =====
+        // 1. Today's Sales — no action
         VBox todaysSales = createStatBox(
                 "Today's Sales",
-                formatCurrency(getTodaySalesTotal()),  // Use the updated method here
+                formatCurrency(getTodaySalesTotal()),
                 Color.web("#4CAF50"),
-                () -> EmployeeAccess.getLayout().setCenter(EmployeeSalesLayout.build(layout))
+                null // No click action
         );
 
         VBox transactions = createStatBox(
-                "Transactions",
-                String.valueOf(TransactionDAO.getTodayCount()),
+                "Sales Today",
+                NumberFormat.getIntegerInstance(Locale.getDefault()).format(SaleDAO.getSalesByDate(LocalDate.now()).size()),
                 Color.web("#2196F3"),
                 () -> EmployeeAccess.getLayout().setCenter(EmployeeTransactionLayout.build())
         );
 
         VBox lowStock = createStatBox(
-                "Low Stock",
-                ProductDAO.getLowStockCount() + " items",
+                "Low/Out of Stock",
+                NumberFormat.getIntegerInstance(Locale.getDefault()).format(ProductDAO.getLowStockCount()) + " items",
                 Color.web("#F44336"),
-                () -> EmployeeAccess.getLayout().setCenter(EmployeeInventoryLayout.build())
+                () -> EmployeeAccess.getLayout().setCenter(EmployeeInventoryLayout.build(true))
         );
+
+
 
         HBox statsRow = new HBox(20, todaysSales, transactions, lowStock);
         statsRow.setAlignment(Pos.CENTER);
@@ -83,12 +86,15 @@ public class EmployeeDashboardLayout {
 
         VBox transactionsList = createTransactionsList();
         VBox rightColumn = new VBox(10, recentTitle, transactionsList);
+        rightColumn.setMinWidth(500);
+        rightColumn.setMaxWidth (500);
         rightColumn.getStyleClass().add("chart-container");
         VBox.setVgrow(rightColumn, Priority.ALWAYS);
 
         HBox splitRow = new HBox(20, leftColumn, rightColumn);
         splitRow.setAlignment(Pos.CENTER);
-        splitRow.setPadding(new Insets(5, 0, 0, 0));        splitRow.setMinHeight(500);
+        splitRow.setPadding(new Insets(5, 0, 0, 0));
+        splitRow.setMinHeight(500);
         HBox.setHgrow(leftColumn, Priority.ALWAYS);
         HBox.setHgrow(rightColumn, Priority.ALWAYS);
 
@@ -142,14 +148,22 @@ public class EmployeeDashboardLayout {
         chart.setLegendSide(Side.BOTTOM);
         chart.setStyle("-fx-background-color: #2e2e2e; -fx-background-radius: 10; -fx-padding: 10;");
 
-        Map<String, Integer> pieData = TransactionDAO.getTodayTransactionSummaryByProduct();
+        Map<String, Integer> pieData = new HashMap<>();
+        try {
+            List<SaleItem> todayItems = SaleItemDAO.getSaleItemsByDate(LocalDate.now());
+            for (SaleItem item : todayItems) {
+                String label = item.getProductName();
+                pieData.put(label, pieData.getOrDefault(label, 0) + item.getSiQty());
+            }
+        } catch (SQLException e) {
+            e.printStackTrace(); // Replace with logger if needed
+        }
 
         for (Map.Entry<String, Integer> entry : pieData.entrySet()) {
             String label = entry.getKey();
             if (label.length() > 15) {
                 label = label.substring(0, 12) + "...";
             }
-
             chart.getData().add(new PieChart.Data(label, entry.getValue()));
         }
 
@@ -166,53 +180,56 @@ public class EmployeeDashboardLayout {
             """);
             }
 
-            chart.lookupAll(".chart-legend-item").forEach(item -> {
-                item.setStyle("-fx-text-fill: white;");
-            });
-
-            chart.lookupAll(".chart-pie-label").forEach(labelNode -> {
-                labelNode.setStyle("-fx-fill: white; -fx-font-size: 13px;");
-            });
+            chart.lookupAll(".chart-legend-item").forEach(item -> item.setStyle("-fx-text-fill: white;"));
+            chart.lookupAll(".chart-pie-label").forEach(labelNode -> labelNode.setStyle("-fx-fill: white; -fx-font-size: 13px;"));
         });
 
         return chart;
     }
 
+
     private static BarChart<String, Number> createBarChart() {
-        // Create axes
         CategoryAxis xAxis = new CategoryAxis();
         NumberAxis yAxis = new NumberAxis();
         xAxis.setLabel("Product");
         yAxis.setLabel("Units Sold");
 
-        // Create bar chart
         BarChart<String, Number> barChart = new BarChart<>(xAxis, yAxis);
         barChart.setTitle("Top Selling This Week");
 
         XYChart.Series<String, Number> series = new XYChart.Series<>();
         series.setName("Top Selling");
 
-        Map<String, Integer> weeklyData = TransactionDAO.getWeeklyTransactionSummaryByProduct();
-
+        Map<String, Integer> weeklyData = new HashMap<>();
+        LocalDate today = LocalDate.now();
+        LocalDate weekStart = today.minusDays(6);
         int maxVal = 5;
+
+        try {
+            for (LocalDate d = weekStart; !d.isAfter(today); d = d.plusDays(1)) {
+                for (SaleItem item : SaleItemDAO.getSaleItemsByDate(d)) {
+                    String name = item.getProductName();
+                    int qty = item.getSiQty();
+                    weeklyData.put(name, weeklyData.getOrDefault(name, 0) + qty);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace(); // Replace with logger if desired
+        }
 
         for (Map.Entry<String, Integer> entry : weeklyData.entrySet()) {
             String label = entry.getKey();
             int value = entry.getValue();
 
-            // Optionally truncate long product names
             if (label.length() > 12) {
                 label = label.substring(0, 10) + "...";
             }
 
             series.getData().add(new XYChart.Data<>(label, value));
-
-            if (value > maxVal) {
-                maxVal = value;
-            }
+            if (value > maxVal) maxVal = value;
         }
 
-        // Y-axis scaling like in your createChart method
+        // Scale y-axis
         int upperBound = ((maxVal + 9) / 10) * 10;
         yAxis.setAutoRanging(false);
         yAxis.setUpperBound(upperBound);
@@ -220,7 +237,7 @@ public class EmployeeDashboardLayout {
 
         barChart.getData().add(series);
 
-        // Apply style settings
+        // Chart style
         barChart.setLegendVisible(false);
         barChart.setHorizontalGridLinesVisible(true);
         barChart.setVerticalGridLinesVisible(false);
@@ -228,83 +245,69 @@ public class EmployeeDashboardLayout {
         yAxis.setTickMarkVisible(true);
         barChart.setAlternativeRowFillVisible(false);
         barChart.setAlternativeColumnFillVisible(false);
-
-        // Aesthetic styling (background, padding, rounded corners)
         barChart.setStyle("-fx-background-color: #2e2e2e; -fx-background-radius: 10; -fx-padding: 10;");
 
         return barChart;
     }
 
+    //RECENT TRANSACTION
     private static VBox createTransactionsList() {
         VBox transactionsList = new VBox(8);
         transactionsList.setId("transactionsList");
 
-        int maxItems = 12;
-        List<Transaction> flatList = TransactionDAO.getRecentTransactions(12); // get more for grouping
-
-        // Group by t_id
-        Map<Integer, List<Transaction>> grouped = new LinkedHashMap<>();
-        for (Transaction txn : flatList) {
-            grouped.computeIfAbsent(txn.getTId(), k -> new ArrayList<>()).add(txn);
-        }
-
+        List<Integer> recentSaleIds = SaleDAO.getRecentSaleIds();
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("h:mm a");
 
         int count = 0;
-        for (Map.Entry<Integer, List<Transaction>> entry : grouped.entrySet()) {
-            if (count++ >= maxItems) break;
+        int maxItems = 14;
 
-            List<Transaction> txns = entry.getValue();
-            LocalDateTime time = txns.get(0).getTDate();
-            double totalAmount = txns.stream().mapToDouble(Transaction::getAmount).sum();
+        for (Integer saleId : recentSaleIds) {
+            if (count >= maxItems) break;
 
-            String formattedTime = time.format(timeFormatter);
-            String formattedAmount = formatCurrency(totalAmount);
+            Sale sale = SaleDAO.getSaleById(saleId);
+            List<SaleItem> items = SaleItemDAO.getSaleItemsBySaleId(saleId);
 
-            StringBuilder description = new StringBuilder();
-            for (int i = 0; i < txns.size(); i++) {
-                Transaction t = txns.get(i);
-                description.append(t.getProductName())
-                        .append(" (").append(t.getTQty()).append(")");
-                if (i < txns.size() - 1) description.append(", ");
+            if (sale == null || items == null || items.isEmpty()) continue;
+
+            String formattedTime = sale.getSaleDate().format(timeFormatter);
+            String formattedAmount = formatCurrency(sale.getTotalAmount());
+
+            StringBuilder itemSummary = new StringBuilder();
+            for (int i = 0; i < items.size(); i++) {
+                SaleItem item = items.get(i);
+                itemSummary.append(item.getProductName())
+                        .append(" (").append(item.getSiQty()).append(")");
+                if (i < items.size() - 1) itemSummary.append(", ");
             }
 
-            String descStr = description.toString();
-            if (descStr.length() > 70) {
-                descStr = descStr.substring(0, 70) + "...";
+            String summary = itemSummary.toString();
+            if (summary.length() > 45) {
+                summary = summary.substring(0, 45) + "...";
             }
 
-            addTransactionItem(transactionsList, formattedTime, formattedAmount, descStr);
+            HBox row = new HBox(10);
+            row.setPadding(new Insets(8));
+            row.setStyle("-fx-background-color: #2a2a2a; -fx-background-radius: 8;");
+            row.setAlignment(Pos.CENTER_LEFT);
+
+            Label timeLabel = new Label(formattedTime);
+            timeLabel.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-pref-width: 70;");
+
+            Label amountLabel = new Label(formattedAmount);
+            amountLabel.setStyle("-fx-text-fill: #00ffcc; -fx-font-weight: bold; -fx-pref-width: 100;");
+
+            Label summaryLabel = new Label(summary);
+            summaryLabel.setStyle("-fx-text-fill: white;");
+            summaryLabel.setWrapText(true);
+            summaryLabel.setMaxWidth(400);
+
+            row.getChildren().addAll(timeLabel, amountLabel, summaryLabel);
+            transactionsList.getChildren().add(row);
+
+            count++;
         }
 
         return transactionsList;
-    }
-
-
-    private static void addTransactionItem(VBox container, String time, String amount, String items) {
-        HBox item = new HBox(15);
-        item.setAlignment(Pos.CENTER_LEFT);
-        item.getStyleClass().add("transaction-item");
-
-        Label timeLabel = new Label(time);
-        timeLabel.getStyleClass().add("transaction-time");
-
-        Label amountLabel = new Label(amount);
-        amountLabel.getStyleClass().add("transaction-amount");
-
-        String shortDescription = items.length() > 35 ? items.substring(0, 32) + "..." : items;
-
-        Label itemsLabel = new Label(shortDescription);
-        itemsLabel.getStyleClass().add("transaction-items");
-        itemsLabel.setWrapText(true);
-        HBox.setHgrow(itemsLabel, Priority.ALWAYS);
-
-        // Redirect to today's transaction layout
-        item.setOnMouseClicked(e -> EmployeeAccess.getLayout().setCenter(EmployeeTransactionLayout.build()));
-        item.setStyle("-fx-cursor: hand;");
-
-        item.getChildren().addAll(timeLabel, amountLabel, itemsLabel);
-        container.getChildren().add(item);
     }
 
 

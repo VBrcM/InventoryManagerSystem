@@ -1,8 +1,10 @@
 package Pages.Layouts.Employee;
 
+import DB.Formatter;
 import Model.DAO.SaleDAO;
 import Model.DAO.SaleItemDAO;
 import Model.POJO.Sale;
+import Model.POJO.Transaction;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -29,9 +31,20 @@ public class EmployeeTransactionLayout {
         dateLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #cccccc;");
 
         TableView<Transaction> table = createTransactionTable();
-        loadTodaysTransactions(table);
+        List<Sale> sales = loadTodaysTransactions(table);
 
-        VBox layout = new VBox(15, title, dateLabel, table);
+        // ===== Total Calculation =====
+        double grandTotal = sales.stream()
+                .mapToDouble(Sale::getTotalAmount)
+                .sum();
+
+        Label totalLabel = new Label("Total Amount: " + Formatter.formatCurrency(grandTotal));
+        totalLabel.setStyle("-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: white;");
+
+        HBox totalBox = new HBox(totalLabel);
+        totalBox.setAlignment(Pos.CENTER_RIGHT);
+
+        VBox layout = new VBox(15, title, dateLabel, table, totalBox); // ⬅ add totalBox here
         layout.setPadding(new Insets(20));
         layout.setAlignment(Pos.TOP_CENTER);
         VBox.setVgrow(table, Priority.ALWAYS);
@@ -67,7 +80,7 @@ public class EmployeeTransactionLayout {
     // ====================================
     // === LOAD TRANSACTIONS FROM DATABASE
     // ====================================
-    private static void loadTodaysTransactions(TableView<Transaction> table) {
+    private static List<Sale> loadTodaysTransactions(TableView<Transaction> table) {
         ObservableList<Transaction> transactions = FXCollections.observableArrayList();
         List<Sale> sales = SaleDAO.getSalesByDate(LocalDate.now());
 
@@ -77,39 +90,12 @@ public class EmployeeTransactionLayout {
                     ? sale.getSaleDate().format(DateTimeFormatter.ofPattern("hh:mm a"))
                     : "N/A";
 
-            Transaction tx = new Transaction(time, items, sale.getTotalAmount());
-            transactions.add(tx);
+            Transaction tnx = new Transaction(time, items, sale.getTotalAmount());
+            transactions.add(tnx);
         }
-
-
 
         table.setItems(transactions);
+        return sales; // ⬅ return the sales list for total calculation
     }
 
-    // =================================
-    // === INTERNAL DISPLAY MODEL CLASS
-    // =================================
-    public static class Transaction {
-        private final String time;
-        private final String itemsSummary;
-        private final double total;
-
-        public Transaction(String time, String itemsSummary, double total) {
-            this.time = time;
-            this.itemsSummary = itemsSummary;
-            this.total = total;
-        }
-
-        public String getTime() {
-            return time;
-        }
-
-        public String getItemsSummary() {
-            return itemsSummary;
-        }
-
-        public double getTotal() {
-            return total;
-        }
-    }
 }

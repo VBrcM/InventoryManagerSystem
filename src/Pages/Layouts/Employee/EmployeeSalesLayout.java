@@ -1,13 +1,12 @@
 package Pages.Layouts.Employee;
 
+import DB.Formatter;
 import DB.JDBC;
 import Dialogs.PopUpDialog;
 import Model.DAO.*;
 import Model.POJO.*;
 import javafx.beans.Observable;
 import javafx.beans.binding.Bindings;
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -15,7 +14,6 @@ import javafx.collections.transformation.FilteredList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 
 import java.sql.Connection;
@@ -26,7 +24,7 @@ import java.util.stream.Collectors;
 
 public class EmployeeSalesLayout {
 
-    private ObservableList<CartItem> cartItems = FXCollections.observableArrayList();
+    private ObservableList<CartItem> finalcartItems = FXCollections.observableArrayList();
 
     public static VBox build(BorderPane parentLayout) {
         VBox layout = new VBox();
@@ -59,8 +57,10 @@ public class EmployeeSalesLayout {
 
         Label title = new Label("New Sale");
         title.setId("title-label");
-        HBox titleBox = new HBox(title);
-        titleBox.setAlignment(Pos.CENTER);
+        title.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: white;");
+        title.setPadding(new Insets(10, 0, 20, 0));
+        title.setAlignment(Pos.CENTER);
+        title.setMaxWidth(Double.MAX_VALUE);
 
         TextField searchField = new TextField();
         searchField.setPromptText("Search products...");
@@ -209,7 +209,7 @@ public class EmployeeSalesLayout {
                     return;
                 }
 
-                // 4. Update stock and record transactions
+                // 4. Update stock
                 for (CartItem item : cartItems) {
                     Product product = item.getProduct();
                     int qty = item.getQuantity();
@@ -226,21 +226,15 @@ public class EmployeeSalesLayout {
                         PopUpDialog.showError("Failed to reduce stock for: " + product.getProductName());
                         return;
                     }
-
-                    Transaction txn = new Transaction(productId, qty, now);
-                    if (!TransactionDAO.recordTransaction(conn, txn)) {
-                        conn.rollback();
-                        PopUpDialog.showError("Failed to record transaction for: " + product.getProductName());
-                        return;
-                    }
                 }
 
-                // 5. Commit changes
+                // 5. Commit all changes
                 conn.commit();
-                PopUpDialog.showInfo("Sale completed successfully.");
+                PopUpDialog.showInfo("Sale completed!");
+
                 cartItems.clear();
 
-                // 🟢 Refresh product table with updated stock
+                // 6. Refresh product table
                 try {
                     allProducts.setAll(ProductDAO.getAll());
                     productsTable.refresh();
@@ -248,7 +242,6 @@ public class EmployeeSalesLayout {
                     ex.printStackTrace();
                     PopUpDialog.showError("Failed to reload products:\n" + ex.getMessage());
                 }
-
 
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -276,7 +269,7 @@ public class EmployeeSalesLayout {
         VBox.setVgrow(productsTable, Priority.ALWAYS); // Stretch product table
         VBox.setVgrow(cartTable, Priority.ALWAYS);     // Stretch cart table
 
-        productsBox.getChildren().addAll(titleBox, searchAndFilterBox, productsTable, addToCartBtn);
+        productsBox.getChildren().addAll(title, searchAndFilterBox, productsTable, addToCartBtn);
         VBox.setVgrow(productsBox, Priority.ALWAYS);
         VBox.setVgrow(cartBox, Priority.ALWAYS);
         VBox.setVgrow(productsTable, Priority.ALWAYS);
@@ -298,11 +291,17 @@ public class EmployeeSalesLayout {
         TableColumn<Product, String> nameCol = new TableColumn<>("Name");
         nameCol.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getProductName()));
 
-        TableColumn<Product, Double> priceCol = new TableColumn<>("Price");
-        priceCol.setCellValueFactory(new PropertyValueFactory<>("productPrice"));
+        TableColumn<Product, String> priceCol = new TableColumn<>("Price");
+        priceCol.setCellValueFactory(cellData -> {
+            double price = cellData.getValue().getProductPrice();
+            return new SimpleStringProperty(Formatter.formatCurrency(price));
+        });
 
-        TableColumn<Product, Integer> stockCol = new TableColumn<>("Stock");
-        stockCol.setCellValueFactory(new PropertyValueFactory<>("stock"));
+        TableColumn<Product, String> stockCol = new TableColumn<>("Stock");
+        stockCol.setCellValueFactory(cellData -> {
+            int stock = cellData.getValue().getStock();
+            return new SimpleStringProperty(Formatter.formatNumber(stock));
+        });
 
         table.getColumns().addAll(nameCol, priceCol, stockCol);
 
@@ -312,6 +311,7 @@ public class EmployeeSalesLayout {
     private static TableView<CartItem> createCartTable(ObservableList<CartItem> cartItems) {
         TableView<CartItem> table = new TableView<>();
         table.setPrefHeight(300);
+        table.setFixedCellSize(60);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY); // Manual sizing
 
         // === Product Column ===
@@ -330,32 +330,45 @@ public class EmployeeSalesLayout {
             private final Button plusBtn = new Button("+");
 
             {
-                quantityField.setPrefWidth(50);
-                quantityField.setMaxWidth(50);
+                // Field Styling
+                quantityField.setPrefWidth(60);
+                quantityField.setMaxWidth(60);
+                quantityField.setMinHeight(40);
+                quantityField.setPrefHeight(40);
+                quantityField.setMaxHeight(40);
+                HBox.setMargin(quantityField, new Insets(5, 0, 0, 0));
                 quantityField.setAlignment(Pos.CENTER);
-                quantityField.setTextFormatter(new TextFormatter<>(change -> change.getText().matches("\\d*") ? change : null));
+                quantityField.setTextFormatter(new TextFormatter<>(change ->
+                        change.getText().matches("\\d*") ? change : null
+                ));
 
+                // Button Styling
                 minusBtn.getStyleClass().add("quantity-btn");
                 plusBtn.getStyleClass().add("quantity-btn");
+                minusBtn.setPrefSize(30, 30);
+                plusBtn.setPrefSize(30, 30);
 
+                // Minus button action
                 minusBtn.setOnAction(e -> {
                     CartItem item = getTableRow().getItem();
                     if (item != null && item.getQuantity() > 1) {
                         item.setQuantity(item.getQuantity() - 1);
                         quantityField.setText(String.valueOf(item.getQuantity()));
-                        table.refresh();
+                        getTableView().refresh();
                     }
                 });
 
+                // Plus button action
                 plusBtn.setOnAction(e -> {
                     CartItem item = getTableRow().getItem();
                     if (item != null && item.getQuantity() < item.getProduct().getStock()) {
                         item.setQuantity(item.getQuantity() + 1);
                         quantityField.setText(String.valueOf(item.getQuantity()));
-                        table.refresh();
+                        getTableView().refresh();
                     }
                 });
 
+                // Manual entry action
                 quantityField.setOnAction(e -> {
                     CartItem item = getTableRow().getItem();
                     if (item != null) {
@@ -363,7 +376,7 @@ public class EmployeeSalesLayout {
                             int val = Integer.parseInt(quantityField.getText());
                             if (val > 0 && val <= item.getProduct().getStock()) {
                                 item.setQuantity(val);
-                                table.refresh();
+                                getTableView().refresh();
                             } else {
                                 quantityField.setText(String.valueOf(item.getQuantity()));
                             }
@@ -373,19 +386,25 @@ public class EmployeeSalesLayout {
                     }
                 });
 
-                container.setAlignment(Pos.CENTER);
+                // HBox Styling
+                container.setSpacing(5);
+                container.setAlignment(Pos.CENTER); // center contents
+                container.setFillHeight(true);
+                container.setPadding(Insets.EMPTY); // remove any extra padding
                 container.getChildren().addAll(minusBtn, quantityField, plusBtn);
             }
 
             @Override
             protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty || getTableRow().getItem() == null) {
+                if (empty || getTableRow() == null || getTableRow().getItem() == null) {
                     setGraphic(null);
                 } else {
-                    CartItem cartItem = getTableRow().getItem();
-                    quantityField.setText(String.valueOf(cartItem.getQuantity()));
+                    quantityField.setText(String.valueOf(getTableRow().getItem().getQuantity()));
                     setGraphic(container);
+                    setContentDisplay(ContentDisplay.GRAPHIC_ONLY); // Avoid text alignment issues
+                    setAlignment(Pos.CENTER); // Align the cell itself
+                    setPadding(Insets.EMPTY); // Remove gap below
                 }
             }
         });
@@ -407,11 +426,13 @@ public class EmployeeSalesLayout {
 
             {
                 deleteBtn.getStyleClass().add("danger-button");
-                deleteBtn.setPrefWidth(30);
+                deleteBtn.setPrefSize(24,24); // Smaller square button
+                deleteBtn.setStyle("-fx-font-size: 15px; -fx-padding: 2px;");
+
                 deleteBtn.setOnAction(e -> {
                     CartItem item = getTableRow().getItem();
                     if (item != null) {
-                        table.getItems().remove(item);
+                        getTableView().getItems().remove(item);
                     }
                 });
             }
@@ -428,6 +449,11 @@ public class EmployeeSalesLayout {
         });
 
         table.getColumns().addAll(productCol, quantityCol, subtotalCol, deleteCol);
+        table.setRowFactory(tv -> {
+            TableRow<CartItem> row = new TableRow<>();
+            row.setPrefHeight(50); // Adjust this value as needed
+            return row;
+        });
         return table;
     }
     private static void bindTotalLabel(Label totalLabel, ObservableList<CartItem> cartItems) {

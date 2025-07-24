@@ -2,6 +2,7 @@ package Model.DAO;
 
 import DB.JDBC;
 import Model.POJO.Category;
+
 import java.sql.*;
 import java.util.*;
 
@@ -137,12 +138,10 @@ public class CategoryDAO {
                     }
                 }
             }
-
         } catch (SQLException e) {
             System.err.println("Error in getOrCreateCategoryByName: " + e.getMessage());
             e.printStackTrace();
         }
-
         return category;
     }
 
@@ -164,5 +163,30 @@ public class CategoryDAO {
         }
 
         return categoryNames;
+    }
+
+    public static boolean deleteCategory(int categoryId) {
+        String sql = "DELETE FROM category WHERE category_id = ?";
+        try (Connection conn = JDBC.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, categoryId);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Error deleting category: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public static boolean renameCategory(int id, String newName) {
+        String sql = "UPDATE category SET category_name = ? WHERE category_id = ?";
+        try (Connection conn = JDBC.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, newName);
+            stmt.setInt(2, id);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Error renaming category: " + e.getMessage());
+            return false;
+        }
     }
 }

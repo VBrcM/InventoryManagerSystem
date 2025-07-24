@@ -2,6 +2,7 @@ package Model.DAO;
 
 import DB.JDBC;
 import Model.POJO.CartItem;
+import Model.POJO.Product;
 import Model.POJO.SaleItem;
 import java.sql.*;
 import java.time.LocalDate;
@@ -165,4 +166,44 @@ public class SaleItemDAO {
         return dates;
     }
 
+    public static List<SaleItem> getSaleItemsBySaleId(int saleId) {
+        List<SaleItem> items = new ArrayList<>();
+
+        String sql = """
+        SELECT si.*, p.product_id, p.product_name, p.product_price
+        FROM sale_item si
+        JOIN product p ON si.product_id = p.product_id
+        WHERE si.sale_id = ?
+    """;
+
+        try (Connection conn = JDBC.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, saleId);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                SaleItem item = new SaleItem();
+                item.setSaleId(rs.getInt("sale_id"));
+                item.setProductId(rs.getInt("product_id"));
+                item.setSiQty(rs.getInt("si_qty"));
+                item.setSiPrice(rs.getDouble("si_price"));
+                item.setSiDate(rs.getTimestamp("si_date").toLocalDateTime());
+
+                // Set product object
+                Product product = new Product();
+                product.setProductId(rs.getInt("product_id"));
+                product.setProductName(rs.getString("product_name"));
+                product.setProductPrice(rs.getDouble("product_price")); // optional
+                item.setProduct(product); // << IMPORTANT
+
+                items.add(item);
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error fetching sale items by saleId: " + e.getMessage());
+        }
+
+        return items;
+    }
 }

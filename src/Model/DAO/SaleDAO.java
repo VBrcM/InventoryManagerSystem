@@ -3,6 +3,8 @@ package Model.DAO;
 import DB.JDBC;
 import Model.POJO.CartItem;
 import Model.POJO.Sale;
+import Model.POJO.SaleItem;
+
 import java.sql.*;
 import java.sql.Date;
 import java.time.LocalDate;
@@ -89,32 +91,55 @@ public class SaleDAO {
 
     public static List<Sale> getSalesByDate(LocalDate date) {
         List<Sale> sales = new ArrayList<>();
-
         String sql = "SELECT * FROM sale WHERE DATE(sale_date) = ? ORDER BY sale_date DESC";
 
         try (Connection conn = JDBC.connect();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setDate(1, Date.valueOf(date));
+            ResultSet rs = stmt.executeQuery();
 
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    Sale sale = new Sale();
-                    sale.setSaleId(rs.getInt("sale_id"));
-                    sale.setTotalAmount(rs.getDouble("total_amount"));
-                    sale.setSaleDate(rs.getTimestamp("sale_date").toLocalDateTime());
+            while (rs.next()) {
+                Sale sale = new Sale();
+                sale.setSaleId(rs.getInt("sale_id"));
+                sale.setSaleDate(rs.getTimestamp("sale_date").toLocalDateTime());
+                sale.setSaleQty(rs.getInt("sale_qty"));
+                sale.setTotalAmount(rs.getDouble("total_amount"));
 
-                    // set other fields as needed
+                // 🔁 Load and attach sale items
+                List<SaleItem> items = SaleItemDAO.getSaleItemsBySaleId(sale.getSaleId());
+                sale.setSaleItems(items);
 
-                    sales.add(sale);
-                }
+                sales.add(sale);
             }
+
         } catch (SQLException e) {
-            e.printStackTrace(); // Replace with proper logging if needed
+            System.err.println("Error retrieving sales by date: " + e.getMessage());
         }
 
         return sales;
     }
+
+    public static List<LocalDate> getAllSaleDates() {
+        List<LocalDate> dates = new ArrayList<>();
+
+        String sql = "SELECT DISTINCT DATE(sale_date) AS sale_date FROM sale ORDER BY sale_date DESC";
+
+        try (Connection conn = JDBC.connect();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                dates.add(rs.getDate("sale_date").toLocalDate());
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace(); // Replace with proper logging if needed
+        }
+
+        return dates;
+    }
+
     public static int insertSale(Connection conn, Sale sale, List<CartItem> items) throws SQLException {
         String saleSql = "INSERT INTO sale (sale_qty, sale_date, total_amount) VALUES (?, ?, ?)";
         String itemSql = "INSERT INTO sale_item (sale_id, product_id, si_qty, si_price, si_date) VALUES (?, ?, ?, ?, ?)";
@@ -156,5 +181,46 @@ public class SaleDAO {
             if (rs != null) rs.close();
             if (saleStmt != null) saleStmt.close();
         }
+    }
+
+    public static List<Integer> getRecentSaleIds() {
+        List<Integer> ids = new ArrayList<>();
+        String sql = "SELECT sale_id FROM sale ORDER BY sale_date DESC LIMIT 30";
+
+        try (Connection conn = JDBC.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                ids.add(rs.getInt("sale_id"));
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error fetching recent sale IDs: " + e.getMessage());
+        }
+
+        return ids;
+    }
+
+    public static Sale getSaleById(int saleId) {
+        String sql = "SELECT * FROM sale WHERE sale_id = ?";
+
+        try (Connection conn = JDBC.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, saleId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                Sale sale = new Sale();
+                sale.setSaleId(saleId);
+                sale.setSaleDate(rs.getTimestamp("sale_date").toLocalDateTime());
+                sale.setTotalAmount(rs.getDouble("total_amount"));
+                sale.setSaleQty(rs.getInt("sale_qty"));
+                return sale;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

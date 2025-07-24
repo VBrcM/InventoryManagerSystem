@@ -165,11 +165,19 @@
 }
 
 .table-row-cell.low-stock {
-    -fx-background-color: #4d1c1c;
+    -fx-background-color: #8c5810;
 }
 
 .table-row-cell.low-stock:hover {
-    -fx-background-color: #773333;
+    -fx-background-color: #885d12;
+}
+
+.table-row-cell.out-of-stock {
+    -fx-background-color: #7a140d; /* red */
+}
+
+.table-row-cell.out-of-stock:hover {
+    -fx-background-color: #6c0d0a; /* red */
 }
 
 .table-view .scroll-bar:vertical,
@@ -384,8 +392,9 @@
 }
 
 .recent-title {
-    -fx-font-size: 16px;
+    -fx-font-size: 18px;
     -fx-text-fill: white;
+    -fx-font-weight:  bold;
 }
 
 .transaction-item {
@@ -415,3 +424,32 @@
     -fx-border-color: transparent;
     -fx-border-width: 0;
 }
+
+#receipt-title {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+#receipt-datetime {
+    -fx-text-fill: lightgray;
+    -fx-font-size: 14px;
+    -fx-alignment: center-left;
+}
+
+#receipt-header {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+#receipt-total-products,
+#receipt-total-sale {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+.receipt-summary {
+    -fx-font-size: 16px;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+

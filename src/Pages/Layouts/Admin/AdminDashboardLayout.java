@@ -60,7 +60,7 @@ public class AdminDashboardLayout {
 
 
         VBox outOfStock = createStatBox(
-                "Out of Stock",
+                "Low/Out of Stock",
                 Formatter.formatNumber(productDAO.getOutOfStockCount()),
                 Color.web("#F44336"),
                 () -> layout.setCenter(AdminInventoryLayout.build(true))

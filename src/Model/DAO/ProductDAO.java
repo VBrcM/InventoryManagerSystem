@@ -4,14 +4,11 @@ import DB.JDBC;
 import Model.POJO.Product;
 import java.sql.*;
 import java.util.*;
-import java.util.logging.Logger;
 
 public class ProductDAO {
-    private static final Logger logger = Logger.getLogger(ProductDAO.class.getName());
-
     public static Product getById(int productId) throws SQLException {
         String sql = """
-            SELECT p.*, c.category_name 
+            SELECT p.*, c.category_name
             FROM product p
             JOIN category c ON p.category_id = c.category_id
             WHERE p.product_id = ?
@@ -33,7 +30,7 @@ public class ProductDAO {
     public static List<Product> getAll() throws SQLException {
         List<Product> products = new ArrayList<>();
         String sql = """
-            SELECT p.*, c.category_name 
+            SELECT p.*, c.category_name
             FROM product p
             JOIN category c ON p.category_id = c.category_id
         """;
@@ -51,7 +48,7 @@ public class ProductDAO {
 
     public static Product insert(Product product) throws SQLException {
         String sql = """
-        INSERT INTO product 
+        INSERT INTO product
         (category_id, product_name, description, product_price, stock)
         VALUES (?, ?, ?, ?, ?)
     """;
@@ -152,8 +149,13 @@ public class ProductDAO {
     public static int getLowStockCount() {
         String sql = """
         SELECT COUNT(*) FROM product p
-        JOIN category_threshold ct ON p.category_id = ct.category_id
-        WHERE p.stock <= ct.threshold
+        JOIN (
+            SELECT category_id, AVG(stock) * 0.2 AS threshold
+            FROM product
+            GROUP BY category_id
+        ) AS thresholds
+        ON p.category_id = thresholds.category_id
+        WHERE p.stock <= thresholds.threshold
     """;
 
         try (Connection conn = JDBC.connect();
