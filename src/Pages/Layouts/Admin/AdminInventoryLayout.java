@@ -2,8 +2,8 @@ package Pages.Layouts.Admin;
 
 import DB.*;
 import Dialogs.*;
-import Model.DAO.ProductDAO;
-import Model.POJO.Product;
+import Model.DAO.*;
+import Model.POJO.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -11,63 +11,63 @@ import javafx.collections.transformation.SortedList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.layout.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.*;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+/**
+ * Layout for displaying and managing the inventory table in the admin view.
+ * This layout provides category filtering, search capability, and action buttons
+ * for creating, editing, and deleting inventory items.
+ */
 public class AdminInventoryLayout {
 
-    /**
-     * Builds the default Inventory page showing all products.
-     */
+    private static final Logger logger = Logger.getLogger(AdminInventoryLayout.class.getName());
+
+    // Builds the full inventory layout
     public static StackPane build() {
         return build(false);
     }
 
-    /**
-     * Builds the Inventory page with an option to show only out-of-stock items.
-     *
-     * @param showOnlyOutOfStock whether to show only products with 0 stock
-     * @return StackPane containing the full layout
-     */
+    // Builds the layout with optional filter for out-of-stock items
     public static StackPane build(boolean showOnlyOutOfStock) {
-        // ===== Title =====
         Label title = new Label("Inventory");
         title.setId("title-label");
-        title.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: white;");
-        title.setPadding(new Insets(10));
         title.setAlignment(Pos.CENTER);
         title.setMaxWidth(Double.MAX_VALUE);
 
-        // ===== Search Field =====
+        // Search field
         TextField searchField = new TextField();
         searchField.setPromptText("Search items...");
         searchField.getStyleClass().add("input-field");
 
-        // ===== Category Filter =====
-        ProductDAO dao = new ProductDAO();
+        // DAO and data load
         List<Product> productList = new ArrayList<>();
+
         try {
-            productList = dao.getAll();
+            productList = ProductDAO.getAll();
         } catch (SQLException e) {
-            e.printStackTrace(); // or show an error dialog
+            logger.log(Level.SEVERE, "Failed to load products from database", e);
+            PopUpDialog.showError("Failed to load products.");
         }
 
         if (showOnlyOutOfStock) {
             productList.removeIf(p -> p.getStock() > 0);
         }
 
+        // Average stock per category
         Map<String, Double> avgStockPerCategory = productList.stream()
                 .collect(Collectors.groupingBy(
                         Product::getCategoryName,
                         Collectors.averagingInt(Product::getStock)
                 ));
 
+        // Category filter
         List<String> categories = productList.stream()
                 .map(Product::getCategoryName)
                 .distinct()
@@ -81,14 +81,11 @@ public class AdminInventoryLayout {
         categoryFilter.getStyleClass().add("inventory-button");
         categoryFilter.setPrefSize(200, 38);
 
-        // ===== Filters Layout =====
         HBox filtersBox = new HBox(10, searchField, categoryFilter);
         filtersBox.setAlignment(Pos.CENTER_LEFT);
-        filtersBox.setPadding(new Insets(10, 0, 10, 0));
         HBox.setHgrow(searchField, Priority.ALWAYS);
-        searchField.setMaxWidth(Double.MAX_VALUE);
 
-        // ===== Table Setup =====
+        // Table
         TableView<Product> table = new TableView<>();
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         table.getStyleClass().add("table-view");
@@ -115,31 +112,29 @@ public class AdminInventoryLayout {
             @Override
             protected void updateItem(Double item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(empty || item == null ? null : Formatter.formatCurrency(item));
+                setText(empty || item == null ? null : AppFormatter.formatCurrency(item));
             }
         });
 
         table.getColumns().addAll(nameCol, categoryCol, quantityCol, priceCol);
         VBox.setVgrow(table, Priority.ALWAYS);
 
-        // ===== Data Binding and Filtering =====
+        // Filtering
         ObservableList<Product> products = FXCollections.observableArrayList(productList);
         FilteredList<Product> filteredList = new FilteredList<>(products, p -> true);
 
         Runnable updateFilter = () -> {
             String searchText = searchField.getText().toLowerCase();
             String selectedCategory = categoryFilter.getValue();
-
             filteredList.setPredicate(p -> {
-                boolean matchesSearch = p.getProductName().toLowerCase().contains(searchText) ||
-                        p.getCategoryName().toLowerCase().contains(searchText);
-                boolean matchesCategory = "All Categories".equals(selectedCategory) ||
-                        selectedCategory.equals(p.getCategoryName());
+                boolean matchesSearch = p.getProductName().toLowerCase().contains(searchText)
+                        || p.getCategoryName().toLowerCase().contains(searchText);
+                boolean matchesCategory = "All Categories".equals(selectedCategory)
+                        || selectedCategory.equals(p.getCategoryName());
                 return matchesSearch && matchesCategory;
             });
         };
 
-        // Update filter when search or category changes
         searchField.textProperty().addListener((obs, oldVal, newVal) -> updateFilter.run());
         categoryFilter.valueProperty().addListener((obs, oldVal, newVal) -> updateFilter.run());
 
@@ -147,13 +142,12 @@ public class AdminInventoryLayout {
         sortedList.comparatorProperty().bind(table.comparatorProperty());
         table.setItems(sortedList);
 
-        // ===== Row Highlighting =====
+        // Row styling based on stock level
         table.setRowFactory(tv -> new TableRow<>() {
             @Override
             protected void updateItem(Product product, boolean empty) {
                 super.updateItem(product, empty);
-                setStyle("");
-                setTooltip(null);
+                getStyleClass().removeAll("low-stock", "out-of-stock");
 
                 if (product != null && !empty) {
                     int stock = product.getStock();
@@ -161,17 +155,21 @@ public class AdminInventoryLayout {
                     double threshold = avg * 0.2;
 
                     if (stock == 0) {
-                        setStyle("-fx-background-color: #ff4d4d;"); // red
+                        getStyleClass().add("out-of-stock");
                         setTooltip(new Tooltip("Out of stock"));
                     } else if (stock < threshold) {
-                        setStyle("-fx-background-color: #ff9900;"); // orange
+                        getStyleClass().add("low-stock");
                         setTooltip(new Tooltip("Low stock: below 20% of category average"));
+                    } else {
+                        setTooltip(null);
                     }
+                } else {
+                    setTooltip(null);
                 }
             }
         });
 
-        // ===== Action Buttons =====
+        // Action buttons
         Button addBtn = new Button("Add");
         Button editBtn = new Button("Edit");
         Button deleteBtn = new Button("Delete");
@@ -183,31 +181,25 @@ public class AdminInventoryLayout {
 
         HBox actionButtons = new HBox(20, addBtn, editBtn, deleteBtn);
         actionButtons.setAlignment(Pos.CENTER);
-        actionButtons.setPadding(new Insets(20, 0, 0, 0));
 
-        // ===== Content Layout =====
-        VBox content = new VBox(10, title, filtersBox, table, actionButtons);
+        VBox content = new VBox(20, title, filtersBox, table, actionButtons);
+        content.getStyleClass().add("root-panel");
         content.setAlignment(Pos.TOP_CENTER);
         content.setPadding(new Insets(20));
-        content.setStyle("-fx-background-color: #1e1e1e;");
+        VBox.setVgrow(table, Priority.ALWAYS);
 
-        StackPane root = new StackPane(content);
-
-        // ===== Button Logic =====
-
-        // Add new product
+        // Button Handlers
         addBtn.setOnAction(e -> InventoryDialog.show(null, products, () -> {
             table.refresh();
             updateFilter.run();
         }));
 
-        // Edit selected product
         editBtn.setOnAction(e -> {
             Product selected = table.getSelectionModel().getSelectedItem();
             if (selected != null) {
                 InventoryDialog.show(selected, products, () -> {
                     try {
-                        List<Product> refreshed = dao.getAll(); // this was missing
+                        List<Product> refreshed = ProductDAO.getAll();
                         if (showOnlyOutOfStock) {
                             refreshed.removeIf(p -> p.getStock() > 0);
                         }
@@ -215,7 +207,7 @@ public class AdminInventoryLayout {
                         updateFilter.run();
                         table.refresh();
                     } catch (SQLException ex) {
-                        ex.printStackTrace(); // Or show error dialog
+                        logger.log(Level.SEVERE, "Failed to refresh inventory list after editing", ex);
                         PopUpDialog.showError("Database Error");
                     }
                 });
@@ -224,25 +216,27 @@ public class AdminInventoryLayout {
             }
         });
 
-        // Delete selected product
         deleteBtn.setOnAction(e -> {
             Product selected = table.getSelectionModel().getSelectedItem();
             if (selected != null) {
-                PopUpDialog.showConfirmation("Delete Item", "Are you sure you want to delete this item?", () -> {
-                    try {
-                        dao.delete(selected.getProductId());
-                        products.remove(selected);
-                        PopUpDialog.showInfo("Product deleted successfully.");
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                        PopUpDialog.showError("An unexpected error occurred: " + ex.getMessage());
+                PopUpDialog.showConfirmation("Delete Item", "Are you sure you want to delete this item?", confirmed -> {
+                    if (confirmed) {
+                        try {
+                            ProductDAO.delete(selected.getProductId());
+                            products.remove(selected);
+                            PopUpDialog.showSuccess("Product deleted successfully.");
+                            logger.info("Deleted product ID: " + selected.getProductId());
+                        } catch (Exception ex) {
+                            logger.log(Level.SEVERE, "Failed to delete product", ex);
+                            PopUpDialog.showError("An unexpected error occurred: " + ex.getMessage());
+                        }
                     }
                 });
             } else {
                 PopUpDialog.showError("Please select a product to delete.");
             }
         });
-
-        return root;
+        // Root wrapper
+        return new StackPane(content);
     }
 }

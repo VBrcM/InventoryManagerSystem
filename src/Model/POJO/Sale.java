@@ -4,15 +4,17 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Represents a sale transaction containing summary details
+ * such as the total quantity, amount, timestamp, and its sale items.
+ */
 public class Sale {
     private int saleId;
     private LocalDateTime saleDate;
     private int saleQty;
     private double totalAmount;
+    private List<SaleItem> saleItems = new ArrayList<>();
 
-    private List<SaleItem> saleItems = new ArrayList<>();  // ✅ Add this
-
-    // Constructors
     public Sale() {}
 
     public Sale(int saleId, LocalDateTime saleDate, int saleQty, double totalAmount) {
@@ -28,7 +30,6 @@ public class Sale {
         this.totalAmount = totalAmount;
     }
 
-    // Getters and setters
     public int getSaleId() {
         return saleId;
     }
@@ -61,7 +62,6 @@ public class Sale {
         this.totalAmount = totalAmount;
     }
 
-    // ✅ Sale Items
     public List<SaleItem> getSaleItems() {
         return saleItems;
     }

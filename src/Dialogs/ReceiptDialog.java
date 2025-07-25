@@ -1,158 +1,164 @@
 package Dialogs;
 
+import DB.AppFormatter;
 import Model.POJO.SaleItem;
 import Pages.AccessPage;
-import DB.Formatter;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.stream.Stream;
+import java.util.logging.Logger;
 
+/**
+ * Displays a receipt dialog showing sale information, including items purchased,
+ * quantity, unit price, and total amount. Utilizes CSS-based styling and integrates
+ * with DialogManager for modal control.
+ */
 public class ReceiptDialog {
 
+    private static final Logger logger = Logger.getLogger(ReceiptDialog.class.getName());
+
+    /**
+     * Builds and shows the receipt layout with formatted data and table.
+     */
     public static void showContent(LocalDateTime time, List<SaleItem> items, int itemCount) {
-        StackPane root = AccessPage.root;
-
-        StackPane overlay = new StackPane();
-        overlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.6);");
-        overlay.prefWidthProperty().bind(root.widthProperty());
-        overlay.prefHeightProperty().bind(root.heightProperty());
-        overlay.setOnMouseClicked(MouseEvent::consume);
-
         VBox dialogBox = new VBox(15);
-        dialogBox.setPadding(new Insets(30));
+        dialogBox.getStyleClass().add("receipt-container");
         dialogBox.setAlignment(Pos.TOP_CENTER);
-        dialogBox.setStyle("-fx-background-color: #2e2e2e; -fx-background-radius: 12;");
-        dialogBox.maxWidthProperty().bind(root.widthProperty().multiply(0.6));
-        dialogBox.maxHeightProperty().bind(root.heightProperty().multiply(0.8));
+        dialogBox.maxWidthProperty().bind(AccessPage.root.widthProperty().multiply(0.8));
+        dialogBox.maxHeightProperty().bind(AccessPage.root.heightProperty().multiply(0.8));
 
-        // === Title ===
-        Label title = new Label("TRANSACTION");
-        title.setFont(Font.font("System", FontWeight.BOLD, 24));
-        title.setTextFill(Color.WHITE);
+        Label title = new Label("RECEIPT");
+        title.getStyleClass().add("receipt-title");
+        title.setPadding(new Insets(0, 0, 12, 0));
 
-        // === Date & Time ===
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy");
-        String dateStr = time.format(formatter);
-        String timeStr = time.toLocalTime().withNano(0).toString();
+        String dateStr = AppFormatter.formatDate(time);
+        String timeStr = AppFormatter.formatTime(time);
 
-        Label dateLabel = new Label("Date: " + dateStr);
-        Label timeLabel = new Label("Time: " + timeStr);
-        Stream.of(dateLabel, timeLabel).forEach(l -> l.setStyle("-fx-text-fill: white;"));
+        Label dateLabel = new Label("Date:");
+        dateLabel.getStyleClass().add("receipt-message-bold");
+        Label dateValue = new Label(dateStr);
+        dateValue.getStyleClass().add("receipt-message");
 
-        VBox dateTimeBox = new VBox(5, dateLabel, timeLabel);
-        dateTimeBox.setAlignment(Pos.CENTER_LEFT);
+        HBox dateRow = new HBox(5, dateLabel, dateValue);
+        dateRow.setAlignment(Pos.CENTER_LEFT);
 
-        // === TableView Setup ===
+        Label timeLabel = new Label("Time:");
+        timeLabel.getStyleClass().add("receipt-message-bold");
+        Label timeValue = new Label(timeStr);
+        timeValue.getStyleClass().add("receipt-message");
+
+        HBox timeRow = new HBox(5, timeLabel, timeValue);
+        timeRow.setAlignment(Pos.CENTER_LEFT);
+
+        VBox dateTimeBox = new VBox(4, dateRow, timeRow);
+        dateTimeBox.setAlignment(Pos.CENTER_RIGHT);
+
+        int saleId = items.isEmpty() ? 0 : items.getFirst().getSaleId();
+
+        Label idLabel = new Label("Sale ID:");
+        idLabel.getStyleClass().add("receipt-message-bold");
+        Label idValue = new Label(String.valueOf(saleId));
+        idValue.getStyleClass().add("receipt-message");
+
+        VBox idBox = new VBox(5, idLabel, idValue);
+        idBox.setAlignment(Pos.CENTER_LEFT);
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        HBox headerRow = new HBox(40, idBox, spacer, dateTimeBox);
+        headerRow.setAlignment(Pos.CENTER_LEFT);
+        headerRow.setPadding(new Insets(0, 0, 10, 0));
+
         TableView<SaleItem> table = new TableView<>();
         table.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
-        table.setMaxHeight(250);
-        table.setStyle("""
-            -fx-background-color: #2e2e2e;
-            -fx-control-inner-background: #2e2e2e;
-            -fx-selection-bar: #444444;
-            -fx-selection-bar-non-focused: #444444;
-            -fx-text-fill: white;
-            -fx-focus-color: transparent;
-            -fx-faint-focus-color: transparent;
-        """);
+        table.getStyleClass().add("table-view");
 
-        // === Define columns
         TableColumn<SaleItem, String> nameCol = new TableColumn<>("Product");
-        nameCol.setCellValueFactory(cellData -> new ReadOnlyObjectWrapper<>(cellData.getValue().getProduct().getProductName()));
+        nameCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().getProduct().getProductName()));
+
+        TableColumn<SaleItem, Integer> qtyCol = new TableColumn<>("Qty");
+        qtyCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().getSiQty()));
 
         TableColumn<SaleItem, Double> priceCol = new TableColumn<>("Unit Price");
-        priceCol.setCellValueFactory(cellData -> new ReadOnlyObjectWrapper<>(cellData.getValue().getSiPrice()));
+        priceCol.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(c.getValue().getSiPrice()));
         priceCol.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(Double item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(empty || item == null ? null : Formatter.formatCurrency(item));
+                setText(empty || item == null ? null : AppFormatter.formatCurrency(item));
             }
         });
 
         TableColumn<SaleItem, Double> subtotalCol = new TableColumn<>("Subtotal");
-        subtotalCol.setCellValueFactory(cellData -> {
-            double subtotal = cellData.getValue().getSiQty() * cellData.getValue().getSiPrice();
+        subtotalCol.setCellValueFactory(c -> {
+            double subtotal = c.getValue().getSiQty() * c.getValue().getSiPrice();
             return new ReadOnlyObjectWrapper<>(subtotal);
         });
         subtotalCol.setCellFactory(col -> new TableCell<>() {
             @Override
             protected void updateItem(Double item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(empty || item == null ? null : Formatter.formatCurrency(item));
+                setText(empty || item == null ? null : AppFormatter.formatCurrency(item));
             }
         });
 
-// === Column alignment (optional)
-        Stream.of(nameCol, priceCol, subtotalCol).forEach(col -> col.setStyle("-fx-alignment: CENTER-LEFT;"));
+        nameCol.setStyle("-fx-alignment: CENTER-LEFT;");
+        qtyCol.setStyle("-fx-alignment: CENTER;");
+        priceCol.setStyle("-fx-alignment: CENTER;");
+        subtotalCol.setStyle("-fx-alignment: CENTER;");
 
-// === Add columns to table
-        table.getColumns().addAll(nameCol, priceCol, subtotalCol);
+        table.getColumns().addAll(nameCol, qtyCol, priceCol, subtotalCol);
         table.setItems(FXCollections.observableArrayList(items));
 
-// === Set column widths by % of total table width
         table.widthProperty().addListener((obs, oldVal, newVal) -> {
             double width = newVal.doubleValue();
-            nameCol.setPrefWidth(width * 0.6);
+            nameCol.setPrefWidth(width * 0.45);
+            qtyCol.setPrefWidth(width * 0.15);
             priceCol.setPrefWidth(width * 0.2);
             subtotalCol.setPrefWidth(width * 0.2);
         });
 
         VBox.setVgrow(table, Priority.ALWAYS);
 
-        // === ScrollPane for Table ===
         ScrollPane scrollPane = new ScrollPane(table);
         scrollPane.setFitToWidth(true);
         scrollPane.setFitToHeight(true);
         scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        scrollPane.setStyle("""
-        -fx-background-color: transparent;
-        -fx-border-color: transparent;
-        -fx-background-insets: 0;
-        -fx-padding: 0;
-                    """);
+        scrollPane.setStyle("-fx-background-color: transparent; -fx-border-color: transparent;");
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
-        // === Summary (Product count and total) ===
-        double total = items.stream()
-                .mapToDouble(i -> i.getSiQty() * i.getSiPrice())
-                .sum();
+        double total = items.stream().mapToDouble(i -> i.getSiQty() * i.getSiPrice()).sum();
 
         Label countLabel = new Label("Product Count: " + itemCount);
-        countLabel.setStyle("-fx-text-fill: #aaaaaa;");
+        countLabel.getStyleClass().add("receipt-message");
 
-        Label totalLabel = new Label("Total Amount: ₱" + Formatter.formatCurrency(total));
-        totalLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;");
+        Label totalLabel = new Label("Total Amount: " + AppFormatter.formatCurrency(total));
+        totalLabel.getStyleClass().add("receipt-message");
+        totalLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
 
         VBox summaryBox = new VBox(5, countLabel, totalLabel);
         summaryBox.setAlignment(Pos.CENTER_LEFT);
         summaryBox.setPadding(new Insets(10, 0, 0, 0));
 
-        // === Back Button Centered ===
         Label backButton = new Label("Back");
-        backButton.setStyle("-fx-background-color: #00bcd4; -fx-text-fill: white; -fx-background-radius: 6; -fx-padding: 8 20;");
-        backButton.setOnMouseClicked(e -> root.getChildren().remove(overlay));
+        backButton.getStyleClass().add("receipt-button");
+        backButton.setOnMouseClicked(e -> DialogManager.closeDialog());
 
         HBox backBox = new HBox(backButton);
         backBox.setAlignment(Pos.CENTER);
         backBox.setPadding(new Insets(10));
 
-        // === Final Assembly ===
-        dialogBox.getChildren().addAll(title, dateTimeBox, scrollPane, summaryBox, backBox);
-        overlay.getChildren().add(dialogBox);
-        StackPane.setAlignment(dialogBox, Pos.CENTER);
-        root.getChildren().add(overlay);
+        dialogBox.getChildren().addAll(title, headerRow, scrollPane, summaryBox, backBox);
+        DialogManager.showDialog(dialogBox);
+
+        logger.info("Displayed receipt dialog with " + itemCount + " items and total " + totalLabel.getText());
     }
 }

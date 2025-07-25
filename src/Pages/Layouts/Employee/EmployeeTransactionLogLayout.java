@@ -1,61 +1,63 @@
 package Pages.Layouts.Employee;
 
-import DB.Formatter;
+import DB.*;
 import Model.DAO.*;
 import Model.POJO.*;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class EmployeeTransactionLogLayout {
 
+    private static final Logger LOGGER = Logger.getLogger(EmployeeTransactionLogLayout.class.getName());
     private static int maxMonths = 1;
     private static int totalDaysLoaded = 0;
     private static final int DAYS_PER_SHOW_MORE = 10;
 
     /**
      * Builds the main layout for employee transaction logs.
+     * Contains title, filter, and scrollable list of daily summaries.
      */
     public static VBox build(BorderPane parentLayout) {
         totalDaysLoaded = 0;
 
-        // ===== Title Label =====
+        // Title
         Label title = new Label("Transaction Log");
         title.setId("title-label");
         title.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: white;");
         title.setPadding(new Insets(10, 0, 10, 0));
 
-        // ===== Filter Dropdown =====
+        // Filtering
         ComboBox<String> filterBox = new ComboBox<>();
         filterBox.getItems().addAll("Last 1 month", "Last 2 months", "Last 3 months");
         filterBox.setValue("Last 1 month");
         filterBox.getStyleClass().add("inventory-button");
         filterBox.setPrefSize(140, 32);
 
-        // ===== Title + Filter Layout =====
+        // Title + filter row
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-
         HBox titleSection = new HBox(10, title, spacer, filterBox);
         titleSection.setAlignment(Pos.CENTER_LEFT);
         titleSection.setPadding(new Insets(0, 0, 5, 0));
 
-        // ===== Day Summary Container =====
+        // Daily transaction list
         VBox dayList = new VBox(15);
         dayList.setPadding(new Insets(10));
         dayList.setAlignment(Pos.TOP_CENTER);
 
-        // ===== Footer Box =====
+        // Footer for "Show More" or end message
         VBox footerBox = new VBox();
         footerBox.setAlignment(Pos.CENTER);
         dayList.getChildren().add(footerBox);
 
-        // ===== Filter Logic =====
+        // Filter selection logic
         filterBox.setOnAction(e -> {
             totalDaysLoaded = 0;
             maxMonths = switch (filterBox.getValue()) {
@@ -63,29 +65,32 @@ public class EmployeeTransactionLogLayout {
                 case "Last 3 months" -> 3;
                 default -> 1;
             };
+            LOGGER.log(Level.INFO, "Filter changed to last {0} month(s)", maxMonths);
             dayList.getChildren().removeIf(node -> node != footerBox);
             footerBox.getChildren().clear();
             loadMoreDays(dayList, parentLayout, footerBox, Integer.MAX_VALUE, true);
         });
 
-        // ===== ScrollPane Setup =====
+        // Scrollable container
         ScrollPane scrollPane = new ScrollPane(dayList);
         scrollPane.setFitToWidth(true);
         scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
 
-        // ===== Root Layout =====
+        // Root layout
         VBox root = new VBox(10, titleSection, scrollPane);
         root.setPadding(new Insets(30));
+        root.getStyleClass().add("root-panel");
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
-        // ===== Initial Load =====
+        // Load initial data
         loadMoreDays(dayList, parentLayout, footerBox, Integer.MAX_VALUE, true);
 
         return root;
     }
 
     /**
-     * Creates a daily transaction summary card.
+     * Creates a single summary card for a day’s transactions.
+     * Displays total sales count and amount for the given date.
      */
     private static VBox createDaySummary(LocalDate date, DateTimeFormatter formatter, List<Sale> sales, BorderPane layout) {
         Label dateLabel = new Label("📅 " + date.format(formatter));
@@ -98,12 +103,15 @@ public class EmployeeTransactionLogLayout {
         double totalSalesAmount = sales.stream()
                 .mapToDouble(Sale::getTotalAmount)
                 .sum();
-        Label salesLabel = new Label("Total Sales of the Day: " + Formatter.formatCurrency(totalSalesAmount));
+        Label salesLabel = new Label("Total Sales of the Day: " + AppFormatter.formatCurrency(totalSalesAmount));
         salesLabel.setStyle("-fx-text-fill: #cccccc;");
 
         Button viewBtn = new Button("View Details");
         viewBtn.getStyleClass().add("inventory-button");
-        viewBtn.setOnAction(e -> layout.setCenter(EmployeeTransactionLogDetailsLayout.build(layout, date, sales)));
+        viewBtn.setOnAction(e -> {
+            LOGGER.log(Level.INFO, "Viewing sales details for date: {0}", date);
+            layout.setCenter(EmployeeTransactionLogDetailsLayout.build(layout, date, sales));
+        });
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -120,7 +128,8 @@ public class EmployeeTransactionLogLayout {
     }
 
     /**
-     * Loads and displays transaction summaries by day.
+     * Loads and displays transaction summaries for previous days.
+     * Uses filters to limit how far back to fetch transactions.
      */
     private static void loadMoreDays(VBox dayList, BorderPane layout, VBox footerBox, int daysToLoad, boolean respectFilterLimit) {
         List<LocalDate> allDates = SaleDAO.getAllSaleDates();
@@ -156,12 +165,15 @@ public class EmployeeTransactionLogLayout {
             done.setStyle("-fx-text-fill: #888; -fx-padding: 10 0 20 0;");
             footerBox.getChildren().add(done);
         }
+
+        LOGGER.log(Level.INFO, "Loaded {0} more day(s) of transaction logs", added);
     }
 
     /**
-     * Refreshes the layout.
+     * Reloads and refreshes the layout from scratch.
      */
     public static void refresh(BorderPane parentLayout) {
+        LOGGER.log(Level.INFO, "Refreshing transaction log layout");
         parentLayout.setCenter(build(parentLayout));
     }
 }

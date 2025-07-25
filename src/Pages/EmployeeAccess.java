@@ -9,9 +9,11 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
+import java.util.logging.Logger;
+
 public class EmployeeAccess {
     public static BorderPane layout;
-    private static Stage currentStage;
+    private static final Logger logger = Logger.getLogger(EmployeeAccess.class.getName());
 
     /**
      * Returns the main layout pane for the employee view.
@@ -21,12 +23,9 @@ public class EmployeeAccess {
     }
 
     /**
-     * Initializes and displays the employee access screen.
-     *
-     * @param stage The primary stage to display the layout on
+     * Initializes and displays the employee access screen using the provided stage.
      */
     public static void show(Stage stage) {
-        currentStage = stage;
         layout = new BorderPane();
 
         // Setup the navigation bar and default center view
@@ -36,6 +35,8 @@ public class EmployeeAccess {
         // Apply layout to root
         StackPane root = (StackPane) stage.getScene().getRoot();
         root.getChildren().setAll(layout);
+
+        logger.info("Employee access screen loaded.");
     }
 
     /**
@@ -64,18 +65,21 @@ public class EmployeeAccess {
         Button dashboardBtn = createNavButton("Dashboard", "📊", EmployeeAccess::showDashboard);
         Button salesBtn = createNavButton("New Sale", "💰", EmployeeAccess::showSales);
         Button inventoryBtn = createNavButton("Inventory", "📦", EmployeeAccess::showInventory);
-        Button transactionsBtn = createNavButton("Today's Transactions", "📈", EmployeeAccess::showTransactions);
-        Button transactionsLogBtn = createNavButton("Transaction Log", "📈", EmployeeAccess::showTransactionsLogs);
+        Button todaysSalesBtn = createNavButton("Today's Sales", "📈", EmployeeAccess::showTodaysSales);
+        Button salesLogBtn = createNavButton("Sales Log", "📈", EmployeeAccess::showSalesLogs);
         Button logoutBtn = createNavButton("Logout", "🔒", AccessLayout::show);
-        Button exitBtn = createNavButton("Exit", "🚪", () -> System.exit(0));
+        Button exitBtn = createNavButton("Exit", "🚪", () -> {
+            logger.info("Application exiting from EmployeeAccess.");
+            System.exit(0);
+        });
 
         // Grouping navigation buttons
         VBox topButtons = new VBox(15,
                 wrap(dashboardBtn),
                 wrap(salesBtn),
                 wrap(inventoryBtn),
-                wrap(transactionsBtn),
-                wrap(transactionsLogBtn)
+                wrap(todaysSalesBtn),
+                wrap(salesLogBtn)
         );
 
         VBox bottomButtons = new VBox(15,
@@ -89,54 +93,57 @@ public class EmployeeAccess {
         // Assemble navbar
         navBar.getChildren().addAll(titleBox, topButtons, spacer, bottomButtons);
         layout.setLeft(navBar);
+
+        logger.info("Navigation bar setup completed.");
     }
 
-    // === View Setters ===
-
+    // Sets the center view to the dashboard
     private static void showDashboard() {
         layout.setCenter(EmployeeDashboardLayout.build());
+        logger.fine("Dashboard view displayed.");
     }
 
+    // Sets the center view to the sales page
     private static void showSales() {
         layout.setCenter(EmployeeSalesLayout.build(layout));
+        logger.fine("Sales view displayed.");
     }
 
+    // Sets the center view to the inventory
     private static void showInventory() {
         layout.setCenter(EmployeeInventoryLayout.build());
+        logger.fine("Inventory view displayed.");
     }
 
-    private static void showTransactions() {
+    // Sets the center view to today's transactions
+    private static void showTodaysSales() {
         layout.setCenter(EmployeeTransactionLayout.build());
+        logger.fine("Today's transactions view displayed.");
     }
 
-    private static void showTransactionsLogs() {
+    // Sets the center view to transaction log
+    private static void showSalesLogs() {
         layout.setCenter(EmployeeTransactionLogLayout.build(layout));
+        logger.fine("Transaction log view displayed.");
     }
-
-    // === UI Helpers ===
 
     /**
-     * Creates a styled navigation button with an icon and label.
-     *
-     * @param text   The button label
-     * @param icon   A string-based icon (e.g., emoji)
-     * @param action The action to execute on click
-     * @return Configured Button instance
+     * Creates a styled navigation button with an icon and label, and binds it to an action.
      */
     private static Button createNavButton(String text, String icon, Runnable action) {
         Button btn = new Button(icon + "  " + text);
         btn.getStyleClass().add("nav-button");
         btn.setPrefHeight(50);
         btn.setPrefWidth(280); // Consistent width
-        btn.setOnAction(e -> action.run());
+        btn.setOnAction(e -> {
+            logger.fine("Navigation button clicked: " + text);
+            action.run();
+        });
         return btn;
     }
 
     /**
-     * Wraps a button in a centered HBox for alignment inside VBox.
-     *
-     * @param button The button to wrap
-     * @return HBox containing the button
+     * Wraps a button in a centered HBox for consistent alignment in VBox.
      */
     private static HBox wrap(Button button) {
         HBox wrapper = new HBox(button);
@@ -145,46 +152,16 @@ public class EmployeeAccess {
     }
 
     /**
-     * Adds a styled transaction item row (used inside dashboard widgets).
-     *
-     * @param container The container to add the row to
-     * @param time      Timestamp label
-     * @param amount    Transaction amount
-     * @param items     Description or item list
-     */
-    private static void addTransactionItem(VBox container, String time, String amount, String items) {
-        HBox item = new HBox(15);
-        item.setAlignment(Pos.CENTER_LEFT);
-        item.setPadding(new Insets(12, 15, 12, 15));
-        item.setStyle("-fx-background-color: #2e2e2e; -fx-background-radius: 8;");
-
-        Label timeLabel = new Label(time);
-        timeLabel.setStyle("-fx-font-weight: bold; -fx-min-width: 100;");
-
-        Label amountLabel = new Label(amount);
-        amountLabel.setStyle("-fx-text-fill: #4CAF50; -fx-font-weight: bold; -fx-min-width: 100;");
-
-        Label itemsLabel = new Label(items);
-        itemsLabel.setStyle("-fx-text-fill: #aaaaaa;");
-        itemsLabel.setWrapText(true);
-        HBox.setHgrow(itemsLabel, Priority.ALWAYS);
-
-        item.getChildren().addAll(timeLabel, amountLabel, itemsLabel);
-        container.getChildren().add(item);
-    }
-
-    /**
-     * Allows external dashboard shortcuts to navigate to specific views.
-     *
-     * @param view String identifier for the view
+     * Navigates to a specific view based on the provided identifier.
      */
     public static void navigateTo(String view) {
         switch (view.toLowerCase()) {
             case "sales": showSales(); break;
             case "inventory": showInventory(); break;
-            case "transactions": showTransactions(); break;
-            case "transaction log": showTransactionsLogs(); break;
+            case "todays sales": showTodaysSales(); break;
+            case "sales log": showSalesLogs(); break;
             default: showDashboard();
         }
+        logger.fine("Navigated to view: " + view);
     }
 }

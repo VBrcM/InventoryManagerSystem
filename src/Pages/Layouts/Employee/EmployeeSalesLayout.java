@@ -1,8 +1,7 @@
 package Pages.Layouts.Employee;
 
-import DB.Formatter;
-import DB.JDBC;
-import Dialogs.PopUpDialog;
+import DB.*;
+import Dialogs.*;
 import Model.DAO.*;
 import Model.POJO.*;
 import javafx.beans.Observable;
@@ -15,23 +14,25 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.stream.Collectors;
+import java.util.logging.Logger;
 
 public class EmployeeSalesLayout {
 
-    private ObservableList<CartItem> finalcartItems = FXCollections.observableArrayList();
+    private static final Logger LOGGER = Logger.getLogger(EmployeeSalesLayout.class.getName());
 
+    /**
+     * Builds and returns the full employee sales layout.
+     * Includes product list, cart, and transaction logic.
+     */
     public static VBox build(BorderPane parentLayout) {
         VBox layout = new VBox();
         layout.setPadding(new Insets(20));
         VBox.setVgrow(layout, Priority.ALWAYS);
 
-        // ---------- Grid Layout ----------
+        // Grid layout
         GridPane contentArea = new GridPane();
         contentArea.setAlignment(Pos.TOP_CENTER);
         contentArea.setHgap(20);
@@ -51,13 +52,12 @@ public class EmployeeSalesLayout {
 
         contentArea.getColumnConstraints().addAll(productsCol, cartCol);
 
-        // ---------- Products Section ----------
         VBox productsBox = new VBox(10);
         VBox cartBox = new VBox(10);
 
         Label title = new Label("New Sale");
         title.setId("title-label");
-        title.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: white;");
+        title.getStyleClass().add("title-label");
         title.setPadding(new Insets(10, 0, 20, 0));
         title.setAlignment(Pos.CENTER);
         title.setMaxWidth(Double.MAX_VALUE);
@@ -71,66 +71,65 @@ public class EmployeeSalesLayout {
         categoryFilter.setMinWidth(200);
         categoryFilter.getStyleClass().add("inventory-button");
 
+        // Filtering box
         HBox searchAndFilterBox = new HBox(10, searchField, categoryFilter);
         searchAndFilterBox.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(searchField, Priority.ALWAYS);
         searchField.setMaxWidth(Double.MAX_VALUE);
 
         ObservableList<Product> allProducts = FXCollections.observableArrayList();
-
         try {
             allProducts.addAll(ProductDAO.getAll());
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.severe("Failed to load products: " + e.getMessage());
             PopUpDialog.showError("Failed to load products:\n" + e.getMessage());
         }
 
         FilteredList<Product> filteredProducts = new FilteredList<>(allProducts, p -> true);
 
-        // 🐞 Debug: Print loaded product count
-        System.out.println("[DEBUG] Total products loaded: " + allProducts.size());
-
-        // Populate categories
-        categoryFilter.getItems().add("All Categories"); // Add first
+        // Populate category filter
+        categoryFilter.getItems().add("All Categories");
         categoryFilter.getItems().addAll(
                 allProducts.stream()
                         .map(Product::getCategoryName)
                         .distinct()
                         .sorted()
-                        .collect(Collectors.toList())
+                        .toList()
         );
-        categoryFilter.getSelectionModel().selectFirst(); // Default to "All Categories"
+        categoryFilter.getSelectionModel().selectFirst();
 
+        // Category filtering
         categoryFilter.valueProperty().addListener((obs, oldVal, newVal) -> {
             filteredProducts.setPredicate(product -> {
                 boolean matchesSearch = product.getProductName().toLowerCase().contains(searchField.getText().toLowerCase());
                 boolean matchesCategory = newVal == null || newVal.equals("All Categories") || product.getCategoryName().equals(newVal);
                 return matchesSearch && matchesCategory;
             });
-            System.out.println("[DEBUG] Category selected: " + newVal);
+            LOGGER.info("Category selected: " + newVal);
         });
 
+        // Text filtering
         searchField.textProperty().addListener((obs, oldVal, newVal) -> {
             filteredProducts.setPredicate(product -> {
-                boolean matchesSearch = product.getProductName().toLowerCase().contains(searchField.getText().toLowerCase());
+                boolean matchesSearch = product.getProductName().toLowerCase().contains(newVal.toLowerCase());
                 boolean matchesCategory = categoryFilter.getValue() == null
                         || categoryFilter.getValue().equals("All Categories")
                         || product.getCategoryName().equals(categoryFilter.getValue());
                 return matchesSearch && matchesCategory;
             });
-            System.out.println("[DEBUG] Search updated: " + newVal);
+            LOGGER.info("Search updated: " + newVal);
         });
 
-        TableView<Product> productsTable = createProductsTable();
+        TableView<Product> productsTable = createProductsTable(); // Product table
         productsTable.setItems(filteredProducts);
 
         ObservableList<CartItem> cartItems = FXCollections.observableArrayList();
-        TableView<CartItem> cartTable = createCartTable(cartItems);
-        cartTable.setItems(cartItems); // Ensure table is bound to cartItems
+        TableView<CartItem> cartTable = createCartTable(cartItems); // Cart table
+        cartTable.setItems(cartItems);
 
         Label totalLabel = new Label();
-        totalLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
-        bindTotalLabel(totalLabel, cartItems);
+        totalLabel.getStyleClass().add("total-amount");
+        bindTotalLabel(totalLabel, cartItems); // Bind total
         HBox totalBox = new HBox(totalLabel);
         totalBox.setAlignment(Pos.CENTER_RIGHT);
         totalBox.setPadding(new Insets(5, 10, 0, 10));
@@ -153,7 +152,7 @@ public class EmployeeSalesLayout {
         clearCartBtn.prefWidthProperty().bind(cartButtons.widthProperty().multiply(0.4));
         completeSaleBtn.prefWidthProperty().bind(cartButtons.widthProperty().multiply(0.6));
 
-        // 🛒 Add to Cart event
+        // Add selected product to cart
         addToCartBtn.setOnAction(e -> {
             Product selected = productsTable.getSelectionModel().getSelectedItem();
             if (selected != null) {
@@ -161,23 +160,25 @@ public class EmployeeSalesLayout {
                     if (item.getProduct().getProductId() == selected.getProductId()) {
                         item.setQuantity(item.getQuantity() + 1);
                         cartTable.refresh();
-                        System.out.println("[DEBUG] Increased quantity for: " + selected.getProductName());
+                        LOGGER.info("Increased quantity for: " + selected.getProductName());
                         return;
                     }
                 }
                 cartItems.add(new CartItem(selected, 1));
                 cartTable.refresh();
-                System.out.println("[DEBUG] Added new product to cart: " + selected.getProductName());
+                LOGGER.info("Added product to cart: " + selected.getProductName());
             } else {
-                System.out.println("[DEBUG] No product selected");
+                LOGGER.info("No product selected");
             }
         });
 
+        // Clear cart
         clearCartBtn.setOnAction(e -> {
             cartItems.clear();
-            System.out.println("[DEBUG] Cart cleared.");
+            LOGGER.info("Cart cleared.");
         });
 
+        // Complete sale transaction
         completeSaleBtn.setOnAction(e -> {
             if (cartItems.isEmpty()) {
                 PopUpDialog.showError("Cart is empty.");
@@ -188,20 +189,17 @@ public class EmployeeSalesLayout {
 
             try {
                 conn = JDBC.connect();
-                conn.setAutoCommit(false); // Start transaction
+                conn.setAutoCommit(false); // Begin transaction
 
-                // 1. Prepare data
                 int totalQty = cartItems.stream().mapToInt(CartItem::getQuantity).sum();
                 double totalAmount = cartItems.stream().mapToDouble(CartItem::getTotal).sum();
                 LocalDateTime now = LocalDateTime.now();
 
-                // 2. Create Sale object
                 Sale sale = new Sale();
                 sale.setSaleQty(totalQty);
                 sale.setTotalAmount(totalAmount);
                 sale.setSaleDate(now);
 
-                // 3. Insert sale + items
                 int saleId = SaleDAO.insertSale(conn, sale, cartItems);
                 if (saleId <= 0) {
                     conn.rollback();
@@ -209,7 +207,6 @@ public class EmployeeSalesLayout {
                     return;
                 }
 
-                // 4. Update stock
                 for (CartItem item : cartItems) {
                     Product product = item.getProduct();
                     int qty = item.getQuantity();
@@ -228,65 +225,68 @@ public class EmployeeSalesLayout {
                     }
                 }
 
-                // 5. Commit all changes
                 conn.commit();
-                PopUpDialog.showInfo("Sale completed!");
+                PopUpDialog.showSuccess("Sale completed!");
+                LOGGER.info("Sale completed with ID: " + saleId);
 
                 cartItems.clear();
 
-                // 6. Refresh product table
+                // Refresh product list
                 try {
                     allProducts.setAll(ProductDAO.getAll());
                     productsTable.refresh();
                 } catch (SQLException ex) {
-                    ex.printStackTrace();
+                    LOGGER.severe("Failed to reload products: " + ex.getMessage());
                     PopUpDialog.showError("Failed to reload products:\n" + ex.getMessage());
                 }
 
             } catch (Exception ex) {
-                ex.printStackTrace();
+                LOGGER.severe("Transaction failed: " + ex.getMessage());
                 try {
                     if (conn != null) conn.rollback();
                 } catch (Exception rollbackEx) {
-                    rollbackEx.printStackTrace();
+                    LOGGER.severe("Rollback failed: " + rollbackEx.getMessage());
                     PopUpDialog.showError("Rollback failed: " + rollbackEx.getMessage());
                 }
                 PopUpDialog.showError("Transaction failed: " + ex.getMessage());
-
             } finally {
                 try {
                     if (conn != null) {
-                        conn.setAutoCommit(true); // Always reset
+                        conn.setAutoCommit(true);
                         conn.close();
                     }
                 } catch (Exception closeEx) {
-                    closeEx.printStackTrace();
+                    LOGGER.warning("Failed to close connection: " + closeEx.getMessage());
                 }
             }
         });
 
-        // Final assembly
-        VBox.setVgrow(productsTable, Priority.ALWAYS); // Stretch product table
-        VBox.setVgrow(cartTable, Priority.ALWAYS);     // Stretch cart table
+        // Layout assembly
+        VBox.setVgrow(productsTable, Priority.ALWAYS);
+        VBox.setVgrow(cartTable, Priority.ALWAYS);
 
         productsBox.getChildren().addAll(title, searchAndFilterBox, productsTable, addToCartBtn);
         VBox.setVgrow(productsBox, Priority.ALWAYS);
         VBox.setVgrow(cartBox, Priority.ALWAYS);
-        VBox.setVgrow(productsTable, Priority.ALWAYS);
-        VBox.setVgrow(cartTable, Priority.ALWAYS);
-        VBox.setVgrow(contentArea, Priority.ALWAYS);
         cartBox.getChildren().addAll(cartTable, totalBox, cartButtons);
 
         contentArea.add(productsBox, 0, 0);
         contentArea.add(cartBox, 1, 0);
 
         layout.getChildren().add(contentArea);
+        layout.getStyleClass().add("root-panel");
+        layout.setAlignment(Pos.TOP_CENTER);
+
         return layout;
     }
 
+    /**
+     * Creates and returns the product table view.
+     */
     private static TableView<Product> createProductsTable() {
-        TableView<Product> table = new TableView<>();
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY); // allows column width control
+        // Table for displaying products
+        TableView<Product> productsTable = new TableView<>();
+        productsTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
         TableColumn<Product, String> nameCol = new TableColumn<>("Name");
         nameCol.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getProductName()));
@@ -294,25 +294,28 @@ public class EmployeeSalesLayout {
         TableColumn<Product, String> priceCol = new TableColumn<>("Price");
         priceCol.setCellValueFactory(cellData -> {
             double price = cellData.getValue().getProductPrice();
-            return new SimpleStringProperty(Formatter.formatCurrency(price));
+            return new SimpleStringProperty(AppFormatter.formatCurrency(price));
         });
 
         TableColumn<Product, String> stockCol = new TableColumn<>("Stock");
         stockCol.setCellValueFactory(cellData -> {
             int stock = cellData.getValue().getStock();
-            return new SimpleStringProperty(Formatter.formatNumber(stock));
+            return new SimpleStringProperty(AppFormatter.formatNumber(stock));
         });
 
-        table.getColumns().addAll(nameCol, priceCol, stockCol);
-
-        return table;
+        productsTable.getColumns().addAll(nameCol, priceCol, stockCol);
+        return productsTable;
     }
 
+    /**
+     * Creates and returns the cart table view.
+     */
     private static TableView<CartItem> createCartTable(ObservableList<CartItem> cartItems) {
-        TableView<CartItem> table = new TableView<>();
-        table.setPrefHeight(300);
-        table.setFixedCellSize(60);
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY); // Manual sizing
+        // Table for displaying cart items
+        TableView<CartItem> cartTable = new TableView<>();
+        cartTable.setPrefHeight(300);
+        cartTable.setFixedCellSize(60);
+        cartTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY); // Manual sizing
 
         // === Product Column ===
         TableColumn<CartItem, String> productCol = new TableColumn<>("Product");
@@ -448,14 +451,18 @@ public class EmployeeSalesLayout {
             }
         });
 
-        table.getColumns().addAll(productCol, quantityCol, subtotalCol, deleteCol);
-        table.setRowFactory(tv -> {
+        cartTable.getColumns().addAll(productCol, quantityCol, subtotalCol, deleteCol);
+        cartTable.setRowFactory(tv -> {
             TableRow<CartItem> row = new TableRow<>();
             row.setPrefHeight(50); // Adjust this value as needed
             return row;
         });
-        return table;
+        return cartTable;
     }
+
+    /**
+     * Binds total label to dynamically show current cart total.
+     */
     private static void bindTotalLabel(Label totalLabel, ObservableList<CartItem> cartItems) {
         Runnable rebinder = () -> {
             Observable[] dependencies = cartItems.stream()
@@ -468,7 +475,6 @@ public class EmployeeSalesLayout {
                     dependencies));
         };
 
-        // Rebind anytime the cart items list changes
         cartItems.addListener((javafx.collections.ListChangeListener<CartItem>) change -> {
             while (change.next()) {
                 if (change.wasAdded() || change.wasRemoved()) {

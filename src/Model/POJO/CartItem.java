@@ -3,6 +3,10 @@ package Model.POJO;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 
+/**
+ * Represents an item in a shopping cart, containing a product and its associated quantity.
+ * Supports dynamic property binding for quantity changes in UI.
+ */
 public class CartItem {
     private final Product product;
     private final IntegerProperty quantity = new SimpleIntegerProperty();
@@ -35,5 +39,4 @@ public class CartItem {
     public double getSubtotal() {
         return product.getProductPrice() * quantity.get();
     }
-
 }

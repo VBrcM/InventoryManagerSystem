@@ -4,27 +4,72 @@ import javafx.scene.Node;
 import javafx.scene.layout.StackPane;
 import Pages.AccessPage;
 
+/**
+ * Handles the display and closing of modal dialogs with a dimmed background overlay.
+ * <p>
+ * Injects a dialog overlay into the main UI root defined in AccessPage.
+ * Only one dialog can be shown at a time. Optionally supports dismissing the dialog
+ * by clicking outside its content area.
+ */
 public class DialogManager {
-    // Displays the given dialog node inside an overlay with dimmed background
+
+    private static StackPane currentOverlay;
+
+    /**
+     * Shows a dialog with dimmed background.
+     * Clicking outside the dialog will not close it.
+     * <p>
+     * Use this for critical or confirm-type dialogs that require explicit dismissal.
+     */
     public static void showDialog(Node dialogContent) {
-        StackPane overlay = new StackPane();
-        overlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.5);");
+        showDialog(dialogContent, false);
+    }
+
+    /**
+     * Shows a dialog with dimmed background and optional outside-click-to-close behavior.
+     * If a dialog is already visible, it is closed before showing the new one.
+     * <p>
+     * If closeOnOutsideClick is true, clicking the dimmed area will close the dialog.
+     * Otherwise, the dialog must be closed manually or through UI controls.
+     */
+    public static void showDialog(Node dialogContent, boolean closeOnOutsideClick) {
+        closeDialog();
+
+        currentOverlay = new StackPane();
+        currentOverlay.getStyleClass().add("dialog-overlay");
 
         StackPane dialogWrapper = new StackPane(dialogContent);
-        dialogWrapper.setStyle("-fx-background-color: #2e2e2e; -fx-padding: 20; -fx-background-radius: 10;");
-        dialogWrapper.setMaxWidth(500);
-        dialogWrapper.setMaxHeight(400);
+        dialogWrapper.setMaxWidth(700);
+        dialogWrapper.setMaxHeight(1000);
 
-        overlay.getChildren().add(dialogWrapper);
-        AccessPage.root.getChildren().add(overlay);
+        currentOverlay.getChildren().add(dialogWrapper);
+        AccessPage.root.getChildren().add(currentOverlay);
 
-        overlay.setOnMouseClicked(e -> {
-            if (e.getTarget() == overlay) {
-                AccessPage.root.getChildren().remove(overlay);
-                System.out.println("Dialog closed by clicking outside");
-            }
-        });
+        if (closeOnOutsideClick) {
+            currentOverlay.setOnMouseClicked(e -> {
+                if (e.getTarget() == currentOverlay) {
+                    closeDialog();
+                    System.out.println("Dialog closed by clicking outside");
+                }
+            });
+        } else {
+            currentOverlay.setOnMouseClicked(e -> e.consume());
+        }
 
+        dialogWrapper.setOnMouseClicked(e -> e.consume());
         System.out.println("Dialog displayed");
+    }
+
+    /**
+     * Closes the currently active dialog if one exists.
+     * <p>
+     * Removes the overlay from the root and clears its reference.
+     */
+    public static void closeDialog() {
+        if (currentOverlay != null) {
+            AccessPage.root.getChildren().remove(currentOverlay);
+            currentOverlay = null;
+            System.out.println("Dialog closed programmatically");
+        }
     }
 }

@@ -2,10 +2,17 @@ package Model.DAO;
 
 import DB.JDBC;
 import Model.POJO.Product;
+
 import java.sql.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ProductDAO {
+
+    private static final Logger logger = Logger.getLogger(ProductDAO.class.getName());
+
     public static Product getById(int productId) throws SQLException {
         String sql = """
             SELECT p.*, c.category_name
@@ -29,6 +36,7 @@ public class ProductDAO {
 
     public static List<Product> getAll() throws SQLException {
         List<Product> products = new ArrayList<>();
+
         String sql = """
             SELECT p.*, c.category_name
             FROM product p
@@ -43,15 +51,15 @@ public class ProductDAO {
                 products.add(extractProduct(rs));
             }
         }
+
         return products;
     }
 
     public static Product insert(Product product) throws SQLException {
         String sql = """
-        INSERT INTO product
-        (category_id, product_name, description, product_price, stock)
-        VALUES (?, ?, ?, ?, ?)
-    """;
+            INSERT INTO product (category_id, product_name, description, product_price, stock)
+            VALUES (?, ?, ?, ?, ?)
+        """;
 
         try (Connection conn = JDBC.connect();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -71,8 +79,9 @@ public class ProductDAO {
                     }
                 }
             }
-            return null;
         }
+
+        return null;
     }
 
     public static boolean update(Product product) throws SQLException {
@@ -100,14 +109,13 @@ public class ProductDAO {
         }
     }
 
-    //Stock Only
     public static boolean updateStock(int productId, int quantityChange) throws SQLException {
         String sql = "UPDATE product SET stock = stock + ? WHERE product_id = ?";
 
         try (Connection conn = JDBC.connect();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setInt(1, quantityChange); // can be negative to reduce stock
+            stmt.setInt(1, quantityChange);
             stmt.setInt(2, productId);
 
             return stmt.executeUpdate() > 0;
@@ -116,6 +124,7 @@ public class ProductDAO {
 
     public static boolean delete(int productId) throws SQLException {
         String sql = "DELETE FROM product WHERE product_id = ?";
+
         try (Connection conn = JDBC.connect();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
@@ -126,12 +135,90 @@ public class ProductDAO {
 
     public static boolean reduceStock(Connection conn, int productId, int quantity) throws SQLException {
         String sql = "UPDATE product SET stock = stock - ? WHERE product_id = ? AND stock >= ?";
+
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, quantity);
             stmt.setInt(2, productId);
             stmt.setInt(3, quantity);
             return stmt.executeUpdate() > 0;
         }
+    }
+
+    public static int getLowStockCount() {
+        String sql = """
+            SELECT COUNT(*) FROM product p
+            JOIN (
+                SELECT category_id, AVG(stock) * 0.2 AS threshold
+                FROM product
+                GROUP BY category_id
+            ) AS thresholds
+            ON p.category_id = thresholds.category_id
+            WHERE p.stock <= thresholds.threshold
+        """;
+
+        try (Connection conn = JDBC.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Error getting low stock count", e);
+        }
+
+        return 0;
+    }
+
+    public static int getTotalProducts() {
+        String sql = "SELECT COUNT(*) FROM product";
+
+        try (Connection conn = JDBC.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Error getting total product count", e);
+        }
+
+        return 0;
+    }
+
+    public static double getTotalStockValue() {
+        String sql = "SELECT SUM(stock * product_price) FROM product";
+
+        try (Connection conn = JDBC.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            if (rs.next()) {
+                return rs.getDouble(1);
+            }
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Error getting total stock value", e);
+        }
+
+        return 0.0;
+    }
+
+    public static int getOutOfStockCount() {
+        String sql = "SELECT COUNT(*) FROM product WHERE stock <= 0";
+
+        try (Connection conn = JDBC.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Error getting out-of-stock count", e);
+        }
+
+        return 0;
     }
 
     private static Product extractProduct(ResultSet rs) throws SQLException {
@@ -144,73 +231,5 @@ public class ProductDAO {
         product.setProductPrice(rs.getDouble("product_price"));
         product.setStock(rs.getInt("stock"));
         return product;
-    }
-
-    public static int getLowStockCount() {
-        String sql = """
-        SELECT COUNT(*) FROM product p
-        JOIN (
-            SELECT category_id, AVG(stock) * 0.2 AS threshold
-            FROM product
-            GROUP BY category_id
-        ) AS thresholds
-        ON p.category_id = thresholds.category_id
-        WHERE p.stock <= thresholds.threshold
-    """;
-
-        try (Connection conn = JDBC.connect();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-
-            if (rs.next()) {
-                return rs.getInt(1);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return 0;
-    }
-
-    public static int getTotalProducts() {
-        String sql = "SELECT COUNT(*) FROM product";
-        try (Connection conn = JDBC.connect();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-            if (rs.next()) {
-                return rs.getInt(1);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return 0;
-    }
-
-    public static double getTotalStockValue() {
-        String sql = "SELECT SUM(stock * product_price) FROM product";
-        try (Connection conn = JDBC.connect();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-            if (rs.next()) {
-                return rs.getDouble(1);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return 0.0;
-    }
-
-    public static int getOutOfStockCount() {
-        String sql = "SELECT COUNT(*) FROM product WHERE stock <= 0";
-        try (Connection conn = JDBC.connect();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-            if (rs.next()) {
-                return rs.getInt(1);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return 0;
     }
 }

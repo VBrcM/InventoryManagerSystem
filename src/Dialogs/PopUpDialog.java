@@ -5,91 +5,119 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
 
+import java.util.function.Consumer;
+import java.util.logging.Logger;
+
+/**
+ * Utility class for displaying popup dialogs including success, error, and confirmation messages.
+ * All dialogs are modal and use styled overlays injected into the AccessPage root.
+ */
 public class PopUpDialog {
 
-    // ======================
-    // === PUBLIC METHODS ===
-    // ======================
+    private static final Logger logger = Logger.getLogger(PopUpDialog.class.getName());
 
-    public static void showInfo(String message) {
-        showOverlay("Information", message, false, null);
-    }
-
+    /**
+     * Displays a modal error dialog with a dismiss button.
+     * Used for critical failures or invalid actions.
+     */
     public static void showError(String message) {
-        showOverlay("Error", message, false, null);
+        show(message, "Error");
     }
 
-    public static void showConfirmation(String title, String message, Runnable onConfirm) {
-        showOverlay(title, message, true, onConfirm);
+    /**
+     * Displays a modal success dialog with a dismiss button.
+     * Used after successful operations such as saving or completing a transaction.
+     */
+    public static void showSuccess(String message) {
+        show(message, "Success");
     }
 
-    // ======================
-    // === CORE OVERLAY UI ==
-    // ======================
-
-    private static void showOverlay(String titleText, String message, boolean isConfirm, Runnable onConfirm) {
-        StackPane root = AccessPage.root;
-
-        // === Dim Background Overlay ===
+    /**
+     * Displays a modal confirmation dialog with Yes and No buttons.
+     * The result of the user action is returned via the callback.
+     */
+    public static void showConfirmation(String title, String message, Consumer<Boolean> onResult) {
         StackPane overlay = new StackPane();
-        overlay.setStyle("-fx-background-color: rgba(0, 0, 0, 0.6);");
-        overlay.prefWidthProperty().bind(root.widthProperty());
-        overlay.prefHeightProperty().bind(root.heightProperty());
-        overlay.setOnMouseClicked(MouseEvent::consume);
+        overlay.getStyleClass().add("dialog-overlay");
 
-        // === Dialog Box ===
-        VBox dialogBox = new VBox(20);
+        VBox dialogBox = new VBox(18);
+        dialogBox.getStyleClass().add("inventory-dialog");
+        dialogBox.setMaxWidth(420);
         dialogBox.setAlignment(Pos.CENTER);
-        dialogBox.setPadding(new Insets(30));
-        dialogBox.setStyle("-fx-background-color: #2e2e2e; -fx-background-radius: 12;");
-        dialogBox.maxWidthProperty().bind(root.widthProperty().multiply(0.3));
-        dialogBox.maxHeightProperty().bind(root.heightProperty().multiply(0.3));
 
-        // === Title Label ===
-        Label title = new Label(titleText);
-        title.setFont(Font.font("System", FontWeight.BOLD, 20));
-        title.setTextFill(Color.WHITE);
-        title.setAlignment(Pos.CENTER);
-        title.setMaxWidth(Double.MAX_VALUE);
+        Label titleLabel = new Label(title);
+        titleLabel.getStyleClass().add("popup-title-danger");
 
-        // === Message Label ===
-        Label body = new Label(message);
-        body.setWrapText(true);
-        body.setStyle("-fx-text-fill: #cccccc; -fx-font-size: 14px;");
-        body.setMaxWidth(Double.MAX_VALUE);
-        body.setAlignment(Pos.CENTER);
-        body.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+        Label messageLabel = new Label(message);
+        messageLabel.getStyleClass().add("popup-message");
+        messageLabel.setWrapText(true);
+        messageLabel.setMaxWidth(400);
 
-        // === Buttons ===
-        HBox buttons = new HBox(15);
-        buttons.setAlignment(Pos.CENTER);
+        Button yesBtn = new Button("Yes");
+        Button noBtn = new Button("No");
+        yesBtn.getStyleClass().add("popup-button");
+        noBtn.getStyleClass().add("popup-button");
 
-        Button okButton = new Button(isConfirm ? "Yes" : "OK");
-        okButton.setStyle("-fx-background-color: #00bcd4; -fx-text-fill: white; -fx-background-radius: 6; -fx-padding: 8 16;");
-        okButton.setOnAction(e -> {
-            root.getChildren().remove(overlay);
-            if (onConfirm != null) onConfirm.run();
+        yesBtn.setOnAction(e -> {
+            ((Pane) overlay.getParent()).getChildren().remove(overlay);
+            onResult.accept(true);
         });
 
-        if (isConfirm) {
-            Button cancelButton = new Button("No");
-            cancelButton.setStyle("-fx-background-color: #555; -fx-text-fill: white; -fx-background-radius: 6; -fx-padding: 8 16;");
-            cancelButton.setOnAction(e -> root.getChildren().remove(overlay));
-            buttons.getChildren().addAll(okButton, cancelButton);
-        } else {
-            buttons.getChildren().add(okButton);
-        }
+        noBtn.setOnAction(e -> {
+            ((Pane) overlay.getParent()).getChildren().remove(overlay);
+            onResult.accept(false);
+        });
 
-        // === Final Assembly ===
-        dialogBox.getChildren().addAll(title, body, buttons);
+        HBox buttonBox = new HBox(20, yesBtn, noBtn);
+        buttonBox.setAlignment(Pos.CENTER);
+
+        dialogBox.getChildren().addAll(titleLabel, messageLabel, buttonBox);
         overlay.getChildren().add(dialogBox);
         StackPane.setAlignment(dialogBox, Pos.CENTER);
-        root.getChildren().add(overlay);
+
+        AccessPage.root.getChildren().add(overlay);
+        logger.info("Confirmation dialog shown: " + message);
+    }
+
+    /**
+     * Internal method to show either success or error message in a modal dialog.
+     * Includes an OK button to dismiss the dialog.
+     */
+    private static void show(String message, String titleText) {
+        StackPane overlay = new StackPane();
+        overlay.getStyleClass().add("dialog-overlay");
+
+        VBox dialogBox = new VBox(16);
+        dialogBox.getStyleClass().add("popup-dialog");
+        dialogBox.setPadding(new Insets(20));
+        dialogBox.setAlignment(Pos.CENTER);
+        dialogBox.setMaxWidth(440);
+
+        Label title = new Label(titleText);
+        if (titleText.equalsIgnoreCase("Success")) {
+            title.getStyleClass().add("popup-title-success");
+        } else {
+            title.getStyleClass().add("popup-title-danger");
+        }
+
+        Label msg = new Label(message);
+        msg.getStyleClass().add("popup-message");
+        msg.setWrapText(true);
+        msg.setMaxWidth(400);
+
+        Button closeBtn = new Button("OK");
+        closeBtn.getStyleClass().add("popup-button");
+        closeBtn.setOnAction(e -> {
+            AccessPage.root.getChildren().remove(overlay);
+        });
+
+        dialogBox.getChildren().addAll(title, msg, closeBtn);
+        overlay.getChildren().add(dialogBox);
+        StackPane.setAlignment(dialogBox, Pos.CENTER);
+
+        AccessPage.root.getChildren().add(overlay);
+        logger.info("Popup displayed: " + titleText + " - " + message);
     }
 }

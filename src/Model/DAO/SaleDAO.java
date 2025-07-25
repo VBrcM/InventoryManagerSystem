@@ -10,15 +10,22 @@ import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Handles all database operations related to sales and associated sale items.
+ */
 public class SaleDAO {
     private static final Logger logger = Logger.getLogger(SaleDAO.class.getName());
 
+    /**
+     * Inserts a new sale record with quantity and total amount.
+     * Returns the generated sale ID.
+     */
     public static int insert(Connection conn, int saleQty, double totalAmount) throws SQLException {
         String sql = "INSERT INTO sale (sale_date, sale_qty, total_amount) VALUES (NOW(), ?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
             stmt.setInt(1, saleQty);
             stmt.setDouble(2, totalAmount);
             stmt.executeUpdate();
@@ -28,10 +35,14 @@ public class SaleDAO {
                     return rs.getInt(1);
                 }
             }
-            throw new SQLException("Failed to get generated sale ID");
+
+            throw new SQLException("Failed to retrieve generated sale ID.");
         }
     }
 
+    /**
+     * Returns all sales on the given date.
+     */
     public static List<Sale> getByDate(LocalDateTime date) throws SQLException {
         List<Sale> sales = new ArrayList<>();
         String sql = "SELECT * FROM sale WHERE DATE(sale_date) = ? ORDER BY sale_id DESC";
@@ -51,9 +62,13 @@ public class SaleDAO {
                 }
             }
         }
+
         return sales;
     }
 
+    /**
+     * Returns the total sale amount for a specific date.
+     */
     public static double getDailyTotal(LocalDateTime date) throws SQLException {
         String sql = "SELECT SUM(total_amount) FROM sale WHERE DATE(sale_date) = ?";
         try (Connection conn = JDBC.connect();
@@ -66,14 +81,18 @@ public class SaleDAO {
                 }
             }
         }
+
         return 0.0;
     }
 
+    /**
+     * Returns today's total sale amount.
+     */
     public static double getTodaySalesTotal() {
         String sql = """
-        SELECT SUM(total_amount) FROM sale
-        WHERE DATE(sale_date) = CURDATE()
-    """;
+            SELECT SUM(total_amount) FROM sale
+            WHERE DATE(sale_date) = CURDATE()
+        """;
 
         try (Connection conn = JDBC.connect();
              PreparedStatement stmt = conn.prepareStatement(sql);
@@ -82,13 +101,17 @@ public class SaleDAO {
             if (rs.next()) {
                 return rs.getDouble(1);
             }
+
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Error fetching today's sales total", e);
         }
 
         return 0.0;
     }
 
+    /**
+     * Returns sales along with their sale items for the specified date.
+     */
     public static List<Sale> getSalesByDate(LocalDate date) {
         List<Sale> sales = new ArrayList<>();
         String sql = "SELECT * FROM sale WHERE DATE(sale_date) = ? ORDER BY sale_date DESC";
@@ -106,7 +129,6 @@ public class SaleDAO {
                 sale.setSaleQty(rs.getInt("sale_qty"));
                 sale.setTotalAmount(rs.getDouble("total_amount"));
 
-                // 🔁 Load and attach sale items
                 List<SaleItem> items = SaleItemDAO.getSaleItemsBySaleId(sale.getSaleId());
                 sale.setSaleItems(items);
 
@@ -114,15 +136,17 @@ public class SaleDAO {
             }
 
         } catch (SQLException e) {
-            System.err.println("Error retrieving sales by date: " + e.getMessage());
+            logger.log(Level.SEVERE, "Error retrieving sales by date", e);
         }
 
         return sales;
     }
 
+    /**
+     * Returns all distinct sale dates in descending order.
+     */
     public static List<LocalDate> getAllSaleDates() {
         List<LocalDate> dates = new ArrayList<>();
-
         String sql = "SELECT DISTINCT DATE(sale_date) AS sale_date FROM sale ORDER BY sale_date DESC";
 
         try (Connection conn = JDBC.connect();
@@ -134,12 +158,16 @@ public class SaleDAO {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace(); // Replace with proper logging if needed
+            logger.log(Level.SEVERE, "Error retrieving all sale dates", e);
         }
 
         return dates;
     }
 
+    /**
+     * Inserts a sale and its associated sale items in one transaction.
+     * Returns the generated sale ID.
+     */
     public static int insertSale(Connection conn, Sale sale, List<CartItem> items) throws SQLException {
         String saleSql = "INSERT INTO sale (sale_qty, sale_date, total_amount) VALUES (?, ?, ?)";
         String itemSql = "INSERT INTO sale_item (sale_id, product_id, si_qty, si_price, si_date) VALUES (?, ?, ?, ?, ?)";
@@ -183,6 +211,9 @@ public class SaleDAO {
         }
     }
 
+    /**
+     * Returns the latest 30 sale IDs ordered by sale date.
+     */
     public static List<Integer> getRecentSaleIds() {
         List<Integer> ids = new ArrayList<>();
         String sql = "SELECT sale_id FROM sale ORDER BY sale_date DESC LIMIT 30";
@@ -196,17 +227,21 @@ public class SaleDAO {
             }
 
         } catch (SQLException e) {
-            System.err.println("Error fetching recent sale IDs: " + e.getMessage());
+            logger.log(Level.SEVERE, "Error fetching recent sale IDs", e);
         }
 
         return ids;
     }
 
+    /**
+     * Returns a Sale object by its ID, or null if not found.
+     */
     public static Sale getSaleById(int saleId) {
         String sql = "SELECT * FROM sale WHERE sale_id = ?";
 
         try (Connection conn = JDBC.connect();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
+
             stmt.setInt(1, saleId);
             ResultSet rs = stmt.executeQuery();
 
@@ -218,9 +253,11 @@ public class SaleDAO {
                 sale.setSaleQty(rs.getInt("sale_qty"));
                 return sale;
             }
+
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Error retrieving sale by ID: " + saleId, e);
         }
+
         return null;
     }
 }

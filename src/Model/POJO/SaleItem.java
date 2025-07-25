@@ -2,6 +2,10 @@ package Model.POJO;
 
 import java.time.LocalDateTime;
 
+/**
+ * Represents a single item sold in a sale transaction.
+ * Includes product information, quantity, price, and timestamp.
+ */
 public class SaleItem {
     private int siId;
     private int saleId;
@@ -24,9 +28,6 @@ public class SaleItem {
         this.siPrice = siPrice;
         this.siDate = siDate;
     }
-
-    // Getters and setters
-
 
     public String getProductName() {
         return product != null ? product.getProductName() : productName;

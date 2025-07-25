@@ -1,5 +1,9 @@
 package Model.POJO;
 
+/**
+ * Represents a product in the inventory system.
+ * Includes details such as ID, category, name, price, stock, and description.
+ */
 public class Product {
     private int productId;
     private int categoryId;
@@ -11,7 +15,6 @@ public class Product {
 
     public Product() {}
 
-    //convenience
     public Product(int categoryId, String productName, String description,
                    double productPrice, int stock) {
         this.categoryId = categoryId;

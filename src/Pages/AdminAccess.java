@@ -3,7 +3,7 @@ package Pages;
 import Pages.Layouts.AccessLayout;
 import Pages.Layouts.Admin.AdminDashboardLayout;
 import Pages.Layouts.Admin.AdminInventoryLayout;
-import Pages.Layouts.Admin.AdminReportsLayout;
+import Pages.Layouts.Admin.AdminReportLayout;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -11,10 +11,18 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
+import java.util.logging.Logger;
 
 public class AdminAccess {
 
+    private static final Logger logger = Logger.getLogger(AdminAccess.class.getName());
+
+    /**
+     * Displays the admin interface layout with navigation and content sections.
+     */
     public static void show(Stage stage) {
+        logger.info("Admin view loaded");
+
         // === Navigation Bar (Left Panel) ===
         VBox navBar = new VBox(20);
         navBar.getStyleClass().add("navbar");
@@ -74,7 +82,7 @@ public class AdminAccess {
         // === Main Layout ===
         BorderPane layout = new BorderPane();
         layout.setLeft(navBar);
-        layout.setCenter(AdminDashboardLayout.build(layout));
+        layout.setCenter(AdminDashboardLayout.build(layout)); // Default view
         layout.setPrefSize(Double.MAX_VALUE, Double.MAX_VALUE);
         BorderPane.setAlignment(navBar, Pos.TOP_LEFT);
 
@@ -83,13 +91,33 @@ public class AdminAccess {
         AccessPage.root.getChildren().setAll(layout);
 
         // === Button Event Handlers ===
-        dashboardBtn.setOnAction(e -> layout.setCenter(AdminDashboardLayout.build(layout)));
-        inventoryBtn.setOnAction(e -> layout.setCenter(AdminInventoryLayout.build()));
-        reportsBtn.setOnAction(e -> layout.setCenter(AdminReportsLayout.build(layout)));
-        logoutBtn.setOnAction(e -> AccessLayout.show());
-        exitBtn.setOnAction(e -> Platform.exit());
+        dashboardBtn.setOnAction(e -> {
+            logger.info("Dashboard button clicked");
+            layout.setCenter(AdminDashboardLayout.build(layout));
+        });
+
+        inventoryBtn.setOnAction(e -> {
+            logger.info("Inventory button clicked");
+            layout.setCenter(AdminInventoryLayout.build());
+        });
+
+        reportsBtn.setOnAction(e -> {
+            logger.info("Reports button clicked");
+            layout.setCenter(AdminReportLayout.build(layout));
+        });
+
+        logoutBtn.setOnAction(e -> {
+            logger.info("Logout button clicked");
+            AccessLayout.show();
+        });
+
+        exitBtn.setOnAction(e -> {
+            logger.info("Exit button clicked");
+            Platform.exit();
+        });
     }
 
+    // Creates styled navigation button
     private static Button makeNavButton(String text, String icon) {
         Button btn = new Button(icon + "  " + text);
         btn.getStyleClass().add("nav-button");
@@ -98,6 +126,7 @@ public class AdminAccess {
         return btn;
     }
 
+    // Wraps button in centered HBox
     private static HBox wrap(Button button) {
         HBox wrapper = new HBox(button);
         wrapper.setAlignment(Pos.CENTER);

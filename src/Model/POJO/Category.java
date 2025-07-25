@@ -1,5 +1,9 @@
 package Model.POJO;
 
+/**
+ * Represents a product category with a unique ID and name.
+ * Used to classify products in the system.
+ */
 public class Category {
     private int categoryId;
     private String categoryName;
@@ -11,7 +15,6 @@ public class Category {
         this.categoryName = categoryName;
     }
 
-    // Getters and setters
     public int getCategoryId() {
         return categoryId;
     }
