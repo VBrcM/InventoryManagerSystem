@@ -35,7 +35,7 @@ public class AdminInventoryLayout {
     }
 
     // Builds the layout with optional filter for out-of-stock items
-    public static StackPane build(boolean showOnlyOutOfStock) {
+    public static StackPane build(boolean showLowOutStock) {
         Label title = new Label("Inventory");
         title.setId("title-label");
         title.setAlignment(Pos.CENTER);
@@ -56,16 +56,21 @@ public class AdminInventoryLayout {
             PopUpDialog.showError("Failed to load products.");
         }
 
-        if (showOnlyOutOfStock) {
-            productList.removeIf(p -> p.getStock() > 0);
-        }
-
         // Average stock per category
         Map<String, Double> avgStockPerCategory = productList.stream()
                 .collect(Collectors.groupingBy(
                         Product::getCategoryName,
                         Collectors.averagingInt(Product::getStock)
                 ));
+
+        if (showLowOutStock) {
+            productList = productList.stream()
+                    .filter(p -> {
+                        double avg = avgStockPerCategory.getOrDefault(p.getCategoryName(), 0.0);
+                        return p.getStock() == 0 || p.getStock() < avg * 0.2;
+                    })
+                    .collect(Collectors.toList());
+        }
 
         // Category filter
         List<String> categories = productList.stream()
@@ -200,7 +205,7 @@ public class AdminInventoryLayout {
                 InventoryDialog.show(selected, products, () -> {
                     try {
                         List<Product> refreshed = ProductDAO.getAll();
-                        if (showOnlyOutOfStock) {
+                        if (showLowOutStock) {
                             refreshed.removeIf(p -> p.getStock() > 0);
                         }
                         products.setAll(refreshed);

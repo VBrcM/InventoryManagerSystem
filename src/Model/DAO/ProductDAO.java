@@ -203,23 +203,6 @@ public class ProductDAO {
         return 0.0;
     }
 
-    public static int getOutOfStockCount() {
-        String sql = "SELECT COUNT(*) FROM product WHERE stock <= 0";
-
-        try (Connection conn = JDBC.connect();
-             PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-
-            if (rs.next()) {
-                return rs.getInt(1);
-            }
-        } catch (SQLException e) {
-            logger.log(Level.SEVERE, "Error getting out-of-stock count", e);
-        }
-
-        return 0;
-    }
-
     private static Product extractProduct(ResultSet rs) throws SQLException {
         Product product = new Product();
         product.setProductId(rs.getInt("product_id"));

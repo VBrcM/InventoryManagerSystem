@@ -199,10 +199,20 @@ public class EmployeeDashboardLayout {
         BarChart<String, Number> barChart = new BarChart<>(xAxis, yAxis);
         barChart.setTitle("Top Selling This Week");
         barChart.setLegendVisible(false);
-        barChart.setStyle("-fx-background-color: #2e2e2e; -fx-background-radius: 10; -fx-padding: 10;");
+        barChart.getStyleClass().add("dashboard-bar-chart");
 
+        // Style chart appearance
+        barChart.setStyle("-fx-background-color: #2e2e2e; -fx-background-radius: 10;");
+        xAxis.setTickMarkVisible(false);
+        xAxis.setTickLabelRotation(0);
+        yAxis.setTickMarkVisible(true);
+        yAxis.setTickLabelsVisible(true);
+        yAxis.setMinorTickVisible(false);
+        barChart.setHorizontalGridLinesVisible(true);
+        barChart.setVerticalGridLinesVisible(false);
+
+        // Load weekly sales data
         XYChart.Series<String, Number> series = new XYChart.Series<>();
-
         Map<String, Integer> weeklyData = new HashMap<>();
         LocalDate today = LocalDate.now();
         LocalDate weekStart = today.minusDays(6);
@@ -219,6 +229,7 @@ public class EmployeeDashboardLayout {
             LOGGER.log(Level.SEVERE, "Failed to fetch weekly sales data", e);
         }
 
+        // Populate chart data
         int count = 0;
         for (Map.Entry<String, Integer> entry : weeklyData.entrySet()) {
             if (count >= 10) break;
@@ -232,6 +243,7 @@ public class EmployeeDashboardLayout {
             count++;
         }
 
+        // Configure Y-axis scaling
         int upperBound = ((maxVal + 9) / 10) * 10;
         yAxis.setAutoRanging(false);
         yAxis.setUpperBound(upperBound);

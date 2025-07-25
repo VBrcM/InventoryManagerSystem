@@ -39,7 +39,7 @@ public class AdminDashboardLayout {
         totalStock.getStyleClass().add("statbox-sales");
 
         // Stat: Low/Out of stock
-        VBox outOfStock = createStatBox("Low/Out of Stock", AppFormatter.formatNumber(ProductDAO.getOutOfStockCount()),
+        VBox outOfStock = createStatBox("Low/Out of Stock", AppFormatter.formatNumber(ProductDAO.getLowStockCount()),
                 () -> layout.setCenter(AdminInventoryLayout.build(true)));
         outOfStock.getStyleClass().add("statbox-nostock");
 
@@ -108,11 +108,11 @@ public class AdminDashboardLayout {
         barChart.setTitle(title);
         barChart.setLegendVisible(false);
         barChart.getStyleClass().add("dashboard-bar-chart");
+        xAxis.setTickLabelRotation(0);
         xAxis.setTickMarkVisible(false);
         yAxis.setTickMarkVisible(true);
         barChart.setHorizontalGridLinesVisible(true);
         barChart.setVerticalGridLinesVisible(false);
-        xAxis.setTickLabelRotation(0);
 
         String sql;
         boolean truncateLabels = false;

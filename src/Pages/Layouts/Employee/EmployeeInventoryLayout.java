@@ -1,6 +1,7 @@
 package Pages.Layouts.Employee;
 
 import DB.AppFormatter;
+import Dialogs.PopUpDialog;
 import Model.DAO.ProductDAO;
 import Model.POJO.Product;
 import javafx.collections.FXCollections;
@@ -12,7 +13,6 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
-
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
@@ -38,7 +38,7 @@ public class EmployeeInventoryLayout {
     /**
      * Builds the inventory layout with an option to show only low stock items.
      */
-    public static StackPane build(boolean showOnlyLowStock) {
+    public static StackPane build(boolean showLowOutStock) {
         // Title
         Label title = new Label("Inventory");
         title.setId("title-label");
@@ -56,19 +56,25 @@ public class EmployeeInventoryLayout {
         try {
             productList = ProductDAO.getAll();
         } catch (SQLException e) {
-            logger.log(Level.SEVERE, "Failed to fetch products from database", e);
+            logger.log(Level.SEVERE, "Failed to load products from database", e);
+            PopUpDialog.showError("Failed to load products.");
         }
 
-        if (showOnlyLowStock) {
-            productList.removeIf(p -> p.getStock() > 0);
-        }
-
-        // Compute average stock per category
+        // Average stock per category
         Map<String, Double> avgStockPerCategory = productList.stream()
                 .collect(Collectors.groupingBy(
                         Product::getCategoryName,
                         Collectors.averagingInt(Product::getStock)
                 ));
+
+        if (showLowOutStock) {
+            productList = productList.stream()
+                    .filter(p -> {
+                        double avg = avgStockPerCategory.getOrDefault(p.getCategoryName(), 0.0);
+                        return p.getStock() == 0 || p.getStock() < avg * 0.2;
+                    })
+                    .collect(Collectors.toList());
+        }
 
         // Category dropdown
         List<String> categories = productList.stream()
