@@ -9,7 +9,6 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.logging.Logger;

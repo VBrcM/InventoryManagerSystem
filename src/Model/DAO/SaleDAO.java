@@ -4,7 +4,6 @@ import DB.JDBC;
 import Model.POJO.CartItem;
 import Model.POJO.Sale;
 import Model.POJO.SaleItem;
-
 import java.sql.*;
 import java.sql.Date;
 import java.time.LocalDate;

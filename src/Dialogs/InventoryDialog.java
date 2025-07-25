@@ -44,50 +44,68 @@ public class InventoryDialog {
         nameField.setPrefSize(400, 36);
         nameField.getStyleClass().add("dialog-pane");
 
-        AtomicBoolean isInitializing;
-        isInitializing = new AtomicBoolean(true);
+        AtomicBoolean isInitializing = new AtomicBoolean(true);
 
         CategoryDAO categoryDAO = new CategoryDAO();
         ObservableList<String> categoryNames = FXCollections.observableArrayList(CategoryDAO.getAllCategoryNames());
+        FilteredList<String> filtered = new FilteredList<>(categoryNames, s -> true);
 
-        ComboBox<String> categoryField = new ComboBox<>(categoryNames);
+        // ComboBox setup
+        ComboBox<String> categoryField = new ComboBox<>(filtered);
         categoryField.setEditable(true);
         categoryField.setPromptText("Category");
         categoryField.setPrefSize(300, 36);
         categoryField.getStyleClass().add("text-like-combo");
-        categoryField.setVisibleRowCount(6);
-
-        FilteredList<String> filtered = new FilteredList<>(categoryNames, s -> true);
-        categoryField.setItems(filtered);
-        categoryField.setEditable(true);
+        categoryField.setVisibleRowCount(Math.min(filtered.size(), 6));
         categoryField.getSelectionModel().clearSelection();
 
-        filtered.addListener((ListChangeListener<String>) change -> {
-            categoryField.setVisibleRowCount(Math.min(filtered.size(), 6));
+        // Keep dropdown hidden unless typed
+        categoryField.setOnMouseClicked(event -> {
+            // Do not show dropdown if not typing
+            if (categoryField.getEditor().getText().trim().isEmpty()) {
+                event.consume();
+            }
         });
 
-        categoryField.setOnHidden(e -> categoryField.getSelectionModel().clearSelection());
+        // Update visible row count based on filtered list
+        filtered.addListener((ListChangeListener<String>) change ->
+                categoryField.setVisibleRowCount(Math.min(filtered.size(), 6))
+        );
 
+        // Filtering only starts after user types (ignores leading space)
         categoryField.getEditor().textProperty().addListener((obs, oldText, newText) -> {
-            String input = newText == null ? "" : newText;
-            filtered.setPredicate(item -> item.toLowerCase().contains(input.toLowerCase()));
+            if (newText == null || newText.isEmpty() || newText.charAt(0) == ' ') {
+                categoryField.hide();
+                filtered.setPredicate(s -> true);
+                return;
+            }
+
+            String input = newText.toLowerCase().trim();
+            filtered.setPredicate(item -> item.toLowerCase().contains(input));
             categoryField.setVisibleRowCount(Math.min(filtered.size(), 6));
 
-            if (!input.trim().isEmpty() && !filtered.isEmpty()) {
-                if (!categoryField.isShowing()) {
-                    categoryField.show();
-                }
-
+            if (!filtered.isEmpty()) {
                 Platform.runLater(() -> {
-                    if (categoryField.isShowing()) {
-                        categoryField.hide();
+                    if (!categoryField.isShowing()) {
                         categoryField.show();
+                    } else {
+                        categoryField.hide();
+                        categoryField.show(); // force refresh
                     }
                 });
             } else {
                 categoryField.hide();
             }
         });
+
+        // Only update editor text if item was truly selected
+        categoryField.setOnAction(e -> {
+            String selected = categoryField.getSelectionModel().getSelectedItem();
+            if (selected != null) {
+                categoryField.getEditor().setText(selected);
+            }
+        });
+
 
         TextField priceField = new TextField();
         priceField.setPromptText("Price");

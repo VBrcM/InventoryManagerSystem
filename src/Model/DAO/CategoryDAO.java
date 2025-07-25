@@ -2,11 +2,14 @@ package Model.DAO;
 
 import DB.JDBC;
 import Model.POJO.Category;
-
 import java.sql.*;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class CategoryDAO {
+
+    private static final Logger logger = Logger.getLogger(CategoryDAO.class.getName());
 
     public static boolean insert(Category category) throws SQLException {
         String sql = "INSERT INTO category (category_name) VALUES (?)";
@@ -139,8 +142,7 @@ public class CategoryDAO {
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Error in getOrCreateCategoryByName: " + e.getMessage());
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Failed to get or create category: " + categoryName, e);
         }
         return category;
     }
@@ -158,8 +160,7 @@ public class CategoryDAO {
             }
 
         } catch (SQLException e) {
-            System.err.println("[ERROR] Failed to fetch category names: " + e.getMessage());
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Failed to fetch category names", e);
         }
 
         return categoryNames;
@@ -172,7 +173,7 @@ public class CategoryDAO {
             stmt.setInt(1, categoryId);
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
-            System.err.println("Error deleting category: " + e.getMessage());
+            logger.log(Level.SEVERE, "Failed to delete category with ID " + categoryId, e);
             return false;
         }
     }
@@ -185,7 +186,7 @@ public class CategoryDAO {
             stmt.setInt(2, id);
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
-            System.err.println("Error renaming category: " + e.getMessage());
+            logger.log(Level.SEVERE, "Failed to rename category ID " + id + " to " + newName, e);
             return false;
         }
     }

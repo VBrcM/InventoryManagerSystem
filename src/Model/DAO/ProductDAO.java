@@ -2,7 +2,6 @@ package Model.DAO;
 
 import DB.JDBC;
 import Model.POJO.Product;
-
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
