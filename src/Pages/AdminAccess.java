@@ -33,9 +33,10 @@ public class AdminAccess {
         VBox.setVgrow(navBar, Priority.ALWAYS);
 
         // === Title Section ===
-        Label title1 = new Label("Admin");
-        Label title2 = new Label("Portal");
-        title1.getStyleClass().add("navbar-title-line");
+        Label title1 = new Label("AtariSync");
+        Label title2 = new Label("Admin Portal");
+        title1.getStyleClass().add("company-name");
+        title1.setStyle("-fx-font-size: 40px;");
         title2.getStyleClass().add("navbar-title-line");
 
         VBox titleBox = new VBox(title1, title2);

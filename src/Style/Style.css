@@ -11,6 +11,13 @@
     -fx-text-fill: #e0e0e0;
 }
 
+.root-panel {
+    -fx-background-color: #1e1e1e;
+    -fx-padding: 20;
+    -fx-text-fill: #e0e0e0;
+    -fx-font-family: "Segoe UI", "Arial", sans-serif;
+}
+
 /* ────────────────────────────────
    Typography & Text Styles
 ────────────────────────────────── */
@@ -41,7 +48,7 @@
     -fx-font-weight: bold;
 }
 .statbox-sales .stat-label {
-    -fx-text-fill: #00e676;
+    -fx-text-fill: #0d8c0f;
     -fx-font-weight: bold;
 }
 .statbox-count .stat-label {
@@ -124,7 +131,7 @@
     -fx-background-color: #2b35a3;
 }
 .success-button        {
-    -fx-background-color: #30c65c;
+    -fx-background-color: #0d8c0f;
 }
 .danger-button         {
     -fx-background-color: #dc3545;
@@ -287,30 +294,6 @@
 .quantity-btn:hover {
     -fx-background-color: #4a4a4a;
 }
-
-/* ────────────────────────────────
-   Transaction History View
-────────────────────────────────── */
-.transaction-item {
-    -fx-background-color: #3a3a3a;
-    -fx-background-radius: 8px;
-    -fx-padding: 12 15;
-    -fx-alignment: center-left;
-}
-.transaction-time {
-    -fx-font-weight: bold;
-    -fx-text-fill: white;
-    -fx-min-width: 100;
-}
-.transaction-amount {
-    -fx-font-weight: bold;
-    -fx-text-fill: #5fff5f;
-    -fx-min-width: 100;
-}
-.transaction-items {
-    -fx-text-fill: #cccccc;
-}
-
 /* ────────────────────────────────
    Dialogs & Overlays
 ────────────────────────────────── */
@@ -365,7 +348,7 @@
 .popup-title-success {
     -fx-font-size: 18px;
     -fx-font-weight: bold;
-    -fx-text-fill: #27ef29;
+    -fx-text-fill: #0d8c0f;
     -fx-alignment: center;
 }
 .popup-message {
@@ -590,4 +573,10 @@
 }
 .receipt-button:hover {
     -fx-background-color: #6a6a6a;
+}
+
+.company-name{
+    -fx-text-fill: #a3860d;
+    -fx-font-weight: bold;
+    -fx-font-family: 'Copperplate Gothic Bold', 'Arial Black', 'sans-serif';
 }

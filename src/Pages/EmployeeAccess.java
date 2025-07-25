@@ -52,9 +52,10 @@ public class EmployeeAccess {
         VBox.setVgrow(navBar, Priority.ALWAYS);
 
         // Title section ("Employee Portal")
-        Label title1 = new Label("Employee");
-        Label title2 = new Label("Portal");
-        title1.getStyleClass().add("navbar-title-line");
+        Label title1 = new Label("AtariSync");
+        Label title2 = new Label("Employee Portal");
+        title1.getStyleClass().add("company-name");
+        title1.setStyle("-fx-font-size: 40px;");
         title2.getStyleClass().add("navbar-title-line");
 
         VBox titleBox = new VBox(title1, title2);

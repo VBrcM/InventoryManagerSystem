@@ -17,6 +17,11 @@ public class AccessLayout {
      * Displays the access code login layout and handles access logic.
      */
     public static void show() {
+        Label companyName = new Label("AtariSync");
+        companyName.setStyle("-fx-font-size: 70px;");
+        companyName.getStyleClass().addAll("company-name");
+        VBox.setMargin(companyName, new Insets(0, 0, 40, 0));
+
         // Label for prompt
         Label label = new Label("Enter Access Code:");
         label.setStyle("-fx-text-fill: white; -fx-font-size: 18px;");
@@ -76,7 +81,7 @@ public class AccessLayout {
         layout.setPadding(new Insets(30));
         layout.setId("access-container");
 
-        layout.getChildren().addAll(label, accessCodeField, submitButton, exitButton, errorLabel);
+        layout.getChildren().addAll(companyName, label, accessCodeField, submitButton, exitButton, errorLabel);
 
         // Display on root pane
         AccessPage.root.getChildren().setAll(layout);
