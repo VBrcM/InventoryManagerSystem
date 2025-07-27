@@ -43,7 +43,7 @@ public class EmployeeTodaysSalesLogLayout {
 
         double grandTotal = sales.stream().mapToDouble(Sale::getTotalAmount).sum();
         Label totalLabel = new Label("Total Amount: " + AppFormatter.formatCurrency(grandTotal));
-        totalLabel.getStyleClass().add("total-label");
+        totalLabel.setStyle("-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: white;");
 
         HBox totalBox = new HBox(totalLabel);
         totalBox.setAlignment(Pos.CENTER_RIGHT);
@@ -75,6 +75,7 @@ public class EmployeeTodaysSalesLogLayout {
             String formatted = dt != null ? dt.format(DateTimeFormatter.ofPattern("hh:mm a")) : "N/A";
             return new SimpleStringProperty(formatted);
         });
+        timeCol.setPrefWidth(100);
 
         // Items column
         TableColumn<Sale, String> itemsCol = new TableColumn<>("Items");
@@ -84,12 +85,14 @@ public class EmployeeTodaysSalesLogLayout {
                     .collect(Collectors.joining(", "));
             return new SimpleStringProperty(summary);
         });
+        itemsCol.setPrefWidth(640);
 
         // Total column
         TableColumn<Sale, String> totalCol = new TableColumn<>("Total");
         totalCol.setCellValueFactory(data ->
                 new SimpleStringProperty(AppFormatter.formatCurrency(data.getValue().getTotalAmount()))
         );
+        totalCol.setPrefWidth(120);
 
         table.getColumns().addAll(idCol, timeCol, itemsCol, totalCol);
 
