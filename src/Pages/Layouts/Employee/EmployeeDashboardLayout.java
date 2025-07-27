@@ -54,7 +54,7 @@ public class EmployeeDashboardLayout {
         VBox transactions = createStatBox(
                 "Sales Today",
                 NumberFormat.getIntegerInstance(Locale.getDefault()).format(SaleDAO.getSalesByDate(LocalDate.now()).size()),
-                () -> EmployeeAccess.getLayout().setCenter(EmployeeTransactionLayout.build())
+                () -> EmployeeAccess.getLayout().setCenter(EmployeeTodaysSalesLogLayout.build())
         );
         transactions.getStyleClass().add("statbox-count");
 

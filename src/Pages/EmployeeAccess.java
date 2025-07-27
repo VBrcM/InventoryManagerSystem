@@ -118,13 +118,13 @@ public class EmployeeAccess {
 
     // Sets the center view to today's transactions
     private static void showTodaysSales() {
-        layout.setCenter(EmployeeTransactionLayout.build());
+        layout.setCenter(EmployeeTodaysSalesLogLayout.build());
         logger.fine("Today's transactions view displayed.");
     }
 
-    // Sets the center view to transaction log
+    // Sets the center view to sales log
     private static void showSalesLogs() {
-        layout.setCenter(EmployeeTransactionLogLayout.build(layout));
+        layout.setCenter(EmployeeSalesLogLayout.build(layout));
         logger.fine("Transaction log view displayed.");
     }
 

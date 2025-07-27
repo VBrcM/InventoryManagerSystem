@@ -13,22 +13,22 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class EmployeeTransactionLogLayout {
+public class EmployeeSalesLogLayout {
 
-    private static final Logger LOGGER = Logger.getLogger(EmployeeTransactionLogLayout.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(EmployeeSalesLogLayout.class.getName());
     private static int maxMonths = 1;
     private static int totalDaysLoaded = 0;
     private static final int DAYS_PER_SHOW_MORE = 10;
 
     /**
-     * Builds the main layout for employee transaction logs.
+     * Builds the main layout for employee sales logs.
      * Contains title, filter, and scrollable list of daily summaries.
      */
     public static VBox build(BorderPane parentLayout) {
         totalDaysLoaded = 0;
 
         // Title
-        Label title = new Label("Transaction Log");
+        Label title = new Label("Sales Log");
         title.setId("title-label");
         title.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: white;");
         title.setPadding(new Insets(10, 0, 10, 0));
@@ -47,7 +47,7 @@ public class EmployeeTransactionLogLayout {
         titleSection.setAlignment(Pos.CENTER_LEFT);
         titleSection.setPadding(new Insets(0, 0, 5, 0));
 
-        // Daily transaction list
+        // Daily sales list
         VBox dayList = new VBox(15);
         dayList.setPadding(new Insets(10));
         dayList.setAlignment(Pos.TOP_CENTER);
@@ -89,7 +89,7 @@ public class EmployeeTransactionLogLayout {
     }
 
     /**
-     * Creates a single summary card for a day’s transactions.
+     * Creates a single summary card for a day’s sales.
      * Displays total sales count and amount for the given date.
      */
     private static VBox createDaySummary(LocalDate date, DateTimeFormatter formatter, List<Sale> sales, BorderPane layout) {
@@ -110,7 +110,7 @@ public class EmployeeTransactionLogLayout {
         viewBtn.getStyleClass().add("inventory-button");
         viewBtn.setOnAction(e -> {
             LOGGER.log(Level.INFO, "Viewing sales details for date: {0}", date);
-            layout.setCenter(EmployeeTransactionLogDetailsLayout.build(layout, date, sales));
+            layout.setCenter(EmployeeSalesLogDetailsLayout.build(layout, date, sales));
         });
 
         Region spacer = new Region();
@@ -128,8 +128,8 @@ public class EmployeeTransactionLogLayout {
     }
 
     /**
-     * Loads and displays transaction summaries for previous days.
-     * Uses filters to limit how far back to fetch transactions.
+     * Loads and displays sales summaries for previous days.
+     * Uses filters to limit how far back to fetch sales.
      */
     private static void loadMoreDays(VBox dayList, BorderPane layout, VBox footerBox, int daysToLoad, boolean respectFilterLimit) {
         List<LocalDate> allDates = SaleDAO.getAllSaleDates();
@@ -161,19 +161,19 @@ public class EmployeeTransactionLogLayout {
             more.setOnAction(ev -> loadMoreDays(dayList, layout, footerBox, DAYS_PER_SHOW_MORE, false));
             footerBox.getChildren().add(more);
         } else {
-            Label done = new Label("No more transaction records available");
+            Label done = new Label("No more sales records available");
             done.setStyle("-fx-text-fill: #888; -fx-padding: 10 0 20 0;");
             footerBox.getChildren().add(done);
         }
 
-        LOGGER.log(Level.INFO, "Loaded {0} more day(s) of transaction logs", added);
+        LOGGER.log(Level.INFO, "Loaded {0} more day(s) of sales logs", added);
     }
 
     /**
      * Reloads and refreshes the layout from scratch.
      */
     public static void refresh(BorderPane parentLayout) {
-        LOGGER.log(Level.INFO, "Refreshing transaction log layout");
+        LOGGER.log(Level.INFO, "Refreshing sales log layout");
         parentLayout.setCenter(build(parentLayout));
     }
 }

@@ -4,6 +4,7 @@ import DB.*;
 import Dialogs.*;
 import Model.DAO.*;
 import Model.POJO.*;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -19,9 +20,9 @@ import java.util.logging.Logger;
  * Layout for displaying detailed transaction logs for a specific date.
  * Shows sales in a table with item summary and total.
  */
-public class EmployeeTransactionLogDetailsLayout {
+public class EmployeeSalesLogDetailsLayout {
 
-    private static final Logger logger = Logger.getLogger(EmployeeTransactionLogDetailsLayout.class.getName());
+    private static final Logger logger = Logger.getLogger(EmployeeSalesLogDetailsLayout.class.getName());
 
     /**
      * Builds the transaction details layout for a specific date.
@@ -49,12 +50,17 @@ public class EmployeeTransactionLogDetailsLayout {
             return row;
         });
 
+        // Sale ID column
+        TableColumn<Sale, Number> idCol = new TableColumn<>("Sale ID");
+        idCol.setCellValueFactory(data -> new SimpleIntegerProperty(data.getValue().getSaleId()));
+        idCol.setPrefWidth(80);
+
         // Time column
         TableColumn<Sale, String> timeCol = new TableColumn<>("Time");
         timeCol.setCellValueFactory(cellData ->
                 new SimpleStringProperty(AppFormatter.formatTime(cellData.getValue().getSaleDate()))
         );
-        timeCol.setMaxWidth(200);
+        timeCol.setPrefWidth(100);
 
         // Items column
         TableColumn<Sale, String> itemsCol = new TableColumn<>("Items");
@@ -65,17 +71,18 @@ public class EmployeeTransactionLogDetailsLayout {
             }
             return new SimpleStringProperty(String.join(", ", itemStrings));
         });
-        itemsCol.setMaxWidth(800);
+        itemsCol.setPrefWidth(640);
 
         // Total column
         TableColumn<Sale, String> totalCol = new TableColumn<>("Total");
         totalCol.setCellValueFactory(cellData ->
                 new SimpleStringProperty(AppFormatter.formatCurrency(cellData.getValue().getTotalAmount()))
         );
-        totalCol.setMaxWidth(200);
+        totalCol.setPrefWidth(120);
+
 
         // Add columns and data to table
-        table.getColumns().addAll(timeCol, itemsCol, totalCol);
+        table.getColumns().addAll(idCol, timeCol, itemsCol, totalCol);
         table.getItems().addAll(sales);
 
         // Calculate grand total
@@ -89,11 +96,11 @@ public class EmployeeTransactionLogDetailsLayout {
         HBox totalBox = new HBox(totalLabel);
         totalBox.setAlignment(Pos.CENTER_RIGHT);
 
-        // Back button returns to transaction log
+        // Back button returns to sales log
         Button backBtn = new Button("Back to Log");
         backBtn.setOnAction(e -> {
             logger.info("Back button clicked. Returning to transaction log.");
-            parentLayout.setCenter(EmployeeTransactionLogLayout.build(parentLayout));
+            parentLayout.setCenter(EmployeeSalesLogLayout.build(parentLayout));
         });
         backBtn.getStyleClass().add("inventory-button");
 

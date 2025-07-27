@@ -4,6 +4,7 @@ import DB.*;
 import Dialogs.*;
 import Model.DAO.*;
 import Model.POJO.*;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -25,12 +26,12 @@ import java.util.stream.Collectors;
  * Includes a table showing sale time, items sold, and total,
  * with row click support to show detailed receipt.
  */
-public class EmployeeTransactionLayout {
-    private static final Logger logger = Logger.getLogger(EmployeeTransactionLayout.class.getName());
+public class EmployeeTodaysSalesLogLayout {
+    private static final Logger logger = Logger.getLogger(EmployeeTodaysSalesLogLayout.class.getName());
 
     // Builds the layout for displaying today's transactions
     public static VBox build() {
-        Label title = new Label("Today's Transactions");
+        Label title = new Label("Today's Sales");
         title.setId("title-label");
         title.setPadding(new Insets(10, 0, 20, 0));
 
@@ -62,6 +63,11 @@ public class EmployeeTransactionLayout {
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         table.getStyleClass().add("table-view");
 
+        // Sale ID column
+        TableColumn<Sale, Number> idCol = new TableColumn<>("Sale ID");
+        idCol.setCellValueFactory(data -> new SimpleIntegerProperty(data.getValue().getSaleId()));
+        idCol.setPrefWidth(80);
+
         // Time column
         TableColumn<Sale, String> timeCol = new TableColumn<>("Time");
         timeCol.setCellValueFactory(data -> {
@@ -85,7 +91,7 @@ public class EmployeeTransactionLayout {
                 new SimpleStringProperty(AppFormatter.formatCurrency(data.getValue().getTotalAmount()))
         );
 
-        table.getColumns().addAll(timeCol, itemsCol, totalCol);
+        table.getColumns().addAll(idCol, timeCol, itemsCol, totalCol);
 
         // Row click shows receipt dialog
         table.setRowFactory(tv -> {

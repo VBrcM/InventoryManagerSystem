@@ -234,7 +234,12 @@ public class AdminInventoryLayout {
                     try {
                         List<Product> refreshed = ProductDAO.getAll();
                         if (showLowOutStock) {
-                            refreshed.removeIf(p -> p.getStock() > 0);
+                            refreshed = refreshed.stream()
+                                    .filter(p -> {
+                                        double avg = avgStockPerCategory.getOrDefault(p.getCategoryName(), 0.0);
+                                        return p.getStock() == 0 || p.getStock() < avg * 0.2;
+                                    })
+                                    .collect(Collectors.toList());
                         }
                         products.setAll(refreshed);
                         avgStockPerCategory.clear();
