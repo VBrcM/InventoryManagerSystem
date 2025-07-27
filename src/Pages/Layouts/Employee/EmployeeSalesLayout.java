@@ -104,8 +104,11 @@ public class EmployeeSalesLayout {
         categoryFilter.valueProperty().addListener((obs, oldVal, newVal) -> {
             filteredProducts.setPredicate(product -> {
                 boolean matchesSearch = product.getProductName().toLowerCase().contains(searchField.getText().toLowerCase());
-                boolean matchesCategory = newVal == null || newVal.equals("All Categories") || product.getCategoryName().equals(newVal);
-                return matchesSearch && matchesCategory;
+                boolean matchesCategory = newVal == null
+                        || newVal.equals("All Categories")
+                        || product.getCategoryName().equals(newVal);
+                boolean hasStock = product.getStock() > 0;
+                return matchesSearch && matchesCategory && hasStock;
             });
             LOGGER.info("Category selected: " + newVal);
         });
@@ -117,7 +120,8 @@ public class EmployeeSalesLayout {
                 boolean matchesCategory = categoryFilter.getValue() == null
                         || categoryFilter.getValue().equals("All Categories")
                         || product.getCategoryName().equals(categoryFilter.getValue());
-                return matchesSearch && matchesCategory;
+                boolean hasStock = product.getStock() > 0;
+                return matchesSearch && matchesCategory && hasStock;
             });
             LOGGER.info("Search updated: " + newVal);
         });

@@ -195,9 +195,37 @@ public class AdminInventoryLayout {
 
         // Button Handlers
         addBtn.setOnAction(e -> InventoryDialog.show(null, products, () -> {
-            table.refresh();
-            updateFilter.run();
+            try {
+                List<Product> refreshed = ProductDAO.getAll();
+
+                if (showLowOutStock) {
+                    refreshed = refreshed.stream()
+                            .filter(p -> {
+                                double avg = avgStockPerCategory.getOrDefault(p.getCategoryName(), 0.0);
+                                return p.getStock() == 0 || p.getStock() < avg * 0.2;
+                            })
+                            .collect(Collectors.toList());
+                }
+
+                products.setAll(refreshed);
+
+                avgStockPerCategory.clear();
+                avgStockPerCategory.putAll(refreshed.stream()
+                        .collect(Collectors.groupingBy(
+                                Product::getCategoryName,
+                                Collectors.averagingInt(Product::getStock)
+                        ))
+                );
+
+                refreshCategoryFilter(categoryFilter, refreshed);
+                updateFilter.run();
+                table.refresh();
+            } catch (SQLException ex) {
+                logger.log(Level.SEVERE, "Failed to refresh product list after add", ex);
+                PopUpDialog.showError("Database Error");
+            }
         }));
+
 
         editBtn.setOnAction(e -> {
             Product selected = table.getSelectionModel().getSelectedItem();
@@ -209,6 +237,14 @@ public class AdminInventoryLayout {
                             refreshed.removeIf(p -> p.getStock() > 0);
                         }
                         products.setAll(refreshed);
+                        avgStockPerCategory.clear();
+                        avgStockPerCategory.putAll(refreshed.stream()
+                                .collect(Collectors.groupingBy(
+                                        Product::getCategoryName,
+                                        Collectors.averagingInt(Product::getStock)
+                                ))
+                        );
+                        refreshCategoryFilter(categoryFilter, refreshed);
                         updateFilter.run();
                         table.refresh();
                     } catch (SQLException ex) {
@@ -228,9 +264,36 @@ public class AdminInventoryLayout {
                     if (confirmed) {
                         try {
                             ProductDAO.delete(selected.getProductId());
-                            products.remove(selected);
+
+                            // FULL REFRESH instead of just products.remove(selected)
+                            List<Product> refreshed = ProductDAO.getAll();
+
+                            if (showLowOutStock) {
+                                refreshed = refreshed.stream()
+                                        .filter(p -> {
+                                            double avg = avgStockPerCategory.getOrDefault(p.getCategoryName(), 0.0);
+                                            return p.getStock() == 0 || p.getStock() < avg * 0.2;
+                                        })
+                                        .collect(Collectors.toList());
+                            }
+
+                            products.setAll(refreshed);
+
+                            avgStockPerCategory.clear();
+                            avgStockPerCategory.putAll(refreshed.stream()
+                                    .collect(Collectors.groupingBy(
+                                            Product::getCategoryName,
+                                            Collectors.averagingInt(Product::getStock)
+                                    ))
+                            );
+
+                            refreshCategoryFilter(categoryFilter, refreshed);
+                            updateFilter.run();
+                            table.refresh();
+
                             PopUpDialog.showSuccess("Product deleted successfully.");
                             logger.info("Deleted product ID: " + selected.getProductId());
+
                         } catch (Exception ex) {
                             logger.log(Level.SEVERE, "Failed to delete product", ex);
                             PopUpDialog.showError("An unexpected error occurred: " + ex.getMessage());
@@ -241,7 +304,24 @@ public class AdminInventoryLayout {
                 PopUpDialog.showError("Please select a product to delete.");
             }
         });
+
         // Root wrapper
         return new StackPane(content);
     }
+    private static void refreshCategoryFilter(ComboBox<String> categoryFilter, List<Product> productList) {
+        List<String> updatedCategories = productList.stream()
+                .map(Product::getCategoryName)
+                .distinct()
+                .sorted()
+                .toList();
+
+        categoryFilter.getItems().setAll("All Categories");
+        categoryFilter.getItems().addAll(updatedCategories);
+
+        // If previous value no longer exists, reset to "All Categories"
+        if (!categoryFilter.getItems().contains(categoryFilter.getValue())) {
+            categoryFilter.setValue("All Categories");
+        }
+    }
+
 }
