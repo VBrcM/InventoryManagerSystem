@@ -49,13 +49,6 @@ public class AppFormatter {
     }
 
     /**
-     * Formats a LocalTime as 12-hour time with AM/PM (e.g. 02:15 PM).
-     */
-    public static String formatTime(LocalTime time) {
-        return time.format(TIME_FORMAT);
-    }
-
-    /**
      * Formats an integer with digit grouping (e.g. 1,000).
      */
     public static String formatNumber(int value) {
@@ -69,10 +62,4 @@ public class AppFormatter {
         return dateTime.format(DATE_FORMAT);
     }
 
-    /**
-     * Formats a LocalDateTime to a full datetime string (e.g. July 24, 2025 02:15 PM).
-     */
-    public static String formatDateTime(LocalDateTime dateTime) {
-        return dateTime.format(DATETIME_FORMAT);
-    }
 }

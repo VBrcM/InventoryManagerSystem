@@ -19,6 +19,8 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.logging.Logger;
 
+import static DB.AppFormatter.formatCurrency;
+
 public class EmployeeSalesLayout {
 
     private static final Logger LOGGER = Logger.getLogger(EmployeeSalesLayout.class.getName());
@@ -43,11 +45,11 @@ public class EmployeeSalesLayout {
         contentArea.getRowConstraints().add(rowConstraints);
 
         ColumnConstraints productsCol = new ColumnConstraints();
-        productsCol.setPercentWidth(60);
+        productsCol.setPercentWidth(55);
         productsCol.setHgrow(Priority.ALWAYS);
 
         ColumnConstraints cartCol = new ColumnConstraints();
-        cartCol.setPercentWidth(40);
+        cartCol.setPercentWidth(45);
         cartCol.setHgrow(Priority.ALWAYS);
 
         contentArea.getColumnConstraints().addAll(productsCol, cartCol);
@@ -294,7 +296,7 @@ public class EmployeeSalesLayout {
         TableColumn<Product, String> priceCol = new TableColumn<>("Price");
         priceCol.setCellValueFactory(cellData -> {
             double price = cellData.getValue().getProductPrice();
-            return new SimpleStringProperty(AppFormatter.formatCurrency(price));
+            return new SimpleStringProperty(formatCurrency(price));
         });
 
         TableColumn<Product, String> stockCol = new TableColumn<>("Stock");
@@ -334,12 +336,13 @@ public class EmployeeSalesLayout {
 
             {
                 // Field Styling
-                quantityField.setPrefWidth(60);
-                quantityField.setMaxWidth(60);
+                quantityField.setPrefWidth(70);
+                quantityField.setMaxWidth(70);
                 quantityField.setMinHeight(40);
                 quantityField.setPrefHeight(40);
                 quantityField.setMaxHeight(40);
-                HBox.setMargin(quantityField, new Insets(5, 0, 0, 0));
+                quantityField.setStyle("-fx-font-size: 12px;");
+                HBox.setMargin(quantityField, new Insets(2, 0, 0, 0));
                 quantityField.setAlignment(Pos.CENTER);
                 quantityField.setTextFormatter(new TextFormatter<>(change ->
                         change.getText().matches("\\d*") ? change : null
@@ -416,7 +419,7 @@ public class EmployeeSalesLayout {
         TableColumn<CartItem, String> subtotalCol = new TableColumn<>("Subtotal");
         subtotalCol.setCellValueFactory(data -> {
             double subtotal = data.getValue().getTotal();
-            return new SimpleStringProperty(String.format("₱ %.2f", subtotal));
+            return new SimpleStringProperty(formatCurrency(subtotal));
         });
         subtotalCol.setPrefWidth(100);
 
@@ -469,10 +472,12 @@ public class EmployeeSalesLayout {
                     .map(CartItem::quantityProperty)
                     .toArray(Observable[]::new);
 
-            totalLabel.textProperty().bind(Bindings.createStringBinding(() ->
-                            "Total: ₱" + String.format("%.2f",
-                                    cartItems.stream().mapToDouble(CartItem::getTotal).sum()),
-                    dependencies));
+            totalLabel.textProperty().bind(Bindings.createStringBinding(() -> {
+                double total = cartItems.stream()
+                        .mapToDouble(CartItem::getTotal)
+                        .sum();
+                return "Total: " + formatCurrency(total);
+            }, dependencies));
         };
 
         cartItems.addListener((javafx.collections.ListChangeListener<CartItem>) change -> {
