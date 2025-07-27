@@ -12,6 +12,9 @@ public class ProductDAO {
 
     private static final Logger logger = Logger.getLogger(ProductDAO.class.getName());
 
+    /**
+     * Retrieves a single Product by its ID, including category name.
+     */
     public static Product getById(int productId) throws SQLException {
         String sql = """
             SELECT p.*, c.category_name
@@ -33,6 +36,9 @@ public class ProductDAO {
         return null;
     }
 
+    /**
+     * Retrieves all products from the database, including their category names.
+     */
     public static List<Product> getAll() throws SQLException {
         List<Product> products = new ArrayList<>();
 
@@ -54,6 +60,9 @@ public class ProductDAO {
         return products;
     }
 
+    /**
+     * Inserts a new product into the database and returns the product with the generated ID.
+     */
     public static Product insert(Product product) throws SQLException {
         String sql = """
             INSERT INTO product (category_id, product_name, description, product_price, stock)
@@ -82,7 +91,9 @@ public class ProductDAO {
 
         return null;
     }
-
+    /**
+     * Updates an existing product's details in the database.
+     */
     public static boolean update(Product product) throws SQLException {
         String sql = """
             UPDATE product SET
@@ -107,7 +118,9 @@ public class ProductDAO {
             return stmt.executeUpdate() > 0;
         }
     }
-
+    /**
+     * Updates the stock quantity of a product by a specified amount.
+     */
     public static boolean updateStock(int productId, int quantityChange) throws SQLException {
         String sql = "UPDATE product SET stock = stock + ? WHERE product_id = ?";
 
@@ -120,7 +133,9 @@ public class ProductDAO {
             return stmt.executeUpdate() > 0;
         }
     }
-
+    /**
+     * Deletes a product from the database by its ID.
+     */
     public static boolean delete(int productId) throws SQLException {
         String sql = "DELETE FROM product WHERE product_id = ?";
 
@@ -131,7 +146,10 @@ public class ProductDAO {
             return stmt.executeUpdate() > 0;
         }
     }
-
+    /**
+     * Reduces the stock of a product if sufficient quantity is available.
+     * Used within a transaction with an existing connection.
+     */
     public static boolean reduceStock(Connection conn, int productId, int quantity) throws SQLException {
         String sql = "UPDATE product SET stock = stock - ? WHERE product_id = ? AND stock >= ?";
 
@@ -142,7 +160,10 @@ public class ProductDAO {
             return stmt.executeUpdate() > 0;
         }
     }
-
+    /**
+     * Counts how many products are considered low in stock.
+     * A product is low if its stock is less than or equal to 20% of the average stock in its category.
+     */
     public static int getLowStockCount() {
         String sql = """
             SELECT COUNT(*) FROM product p
@@ -168,7 +189,9 @@ public class ProductDAO {
 
         return 0;
     }
-
+    /**
+     * Retrieves the total number of products in the database.
+     */
     public static int getTotalProducts() {
         String sql = "SELECT COUNT(*) FROM product";
 
@@ -185,7 +208,10 @@ public class ProductDAO {
 
         return 0;
     }
-
+    /**
+     * Calculates the total value of all stock in the database.
+     * Computed as the sum of (stock * product_price) for all products.
+     */
     public static double getTotalStockValue() {
         String sql = "SELECT SUM(stock * product_price) FROM product";
 
@@ -202,7 +228,9 @@ public class ProductDAO {
 
         return 0.0;
     }
-
+    /**
+     * Utility method that maps a ResultSet row to a Product object.
+     */
     private static Product extractProduct(ResultSet rs) throws SQLException {
         Product product = new Product();
         product.setProductId(rs.getInt("product_id"));
