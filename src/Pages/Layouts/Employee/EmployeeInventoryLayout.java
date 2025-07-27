@@ -197,7 +197,6 @@ public class EmployeeInventoryLayout {
         """);
 
         StackPane root = new StackPane(scrollPane);
-        root.getStyleClass().add("root-panel");
         root.setStyle("-fx-background-color: #1e1e1e; -fx-border-color: transparent;");
         return root;
     }

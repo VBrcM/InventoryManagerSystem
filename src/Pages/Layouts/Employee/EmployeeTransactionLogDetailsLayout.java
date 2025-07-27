@@ -61,7 +61,7 @@ public class EmployeeTransactionLogDetailsLayout {
         itemsCol.setCellValueFactory(cellData -> {
             List<String> itemStrings = new ArrayList<>();
             for (SaleItem item : cellData.getValue().getSaleItems()) {
-                itemStrings.add(item.getProduct().getProductName() + " x" + item.getSiQty());
+                itemStrings.add(item.getProduct().getProductName() + " (" + item.getSiQty() + ")");
             }
             return new SimpleStringProperty(String.join(", ", itemStrings));
         });

@@ -74,7 +74,7 @@ public class EmployeeTransactionLayout {
         TableColumn<Sale, String> itemsCol = new TableColumn<>("Items");
         itemsCol.setCellValueFactory(data -> {
             String summary = data.getValue().getSaleItems().stream()
-                    .map(i -> i.getProductName() + " x" + i.getSiQty())
+                    .map(i -> i.getProductName() + " (" + i.getSiQty() +")")
                     .collect(Collectors.joining(", "));
             return new SimpleStringProperty(summary);
         });
